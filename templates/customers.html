@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Customers</h1>
+
+<form id="customer-form" class="row g-2 mb-4">
+  <input type="hidden" id="customer-id" />
+  <div class="col-md-2">
+    <input class="form-control" id="gender" placeholder="Gender">
+  </div>
+  <div class="col-md-2">
+    <input class="form-control" id="age" placeholder="Age" type="number">
+  </div>
+  <div class="col-md-3">
+    <input class="form-control" id="income" placeholder="Annual Income" type="number">
+  </div>
+  <div class="col-md-3">
+    <input class="form-control" id="score" placeholder="Spending Score" type="number">
+  </div>
+  <div class="col-md-2 d-grid">
+    <button type="submit" class="btn btn-primary">Save</button>
+  </div>
+</form>
+
+<table class="table table-striped" id="customers-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Gender</th>
+      <th>Age</th>
+      <th>Income</th>
+      <th>Score</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/customers.js') }}"></script>
+{% endblock %}
