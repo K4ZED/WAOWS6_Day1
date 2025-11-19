@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
-from db import query_all, execute
+from config.db import query_all, execute
 
 app = Flask(__name__)
 CORS(app)

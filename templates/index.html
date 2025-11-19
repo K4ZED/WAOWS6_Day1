@@ -1,11 +1,74 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="py-5 text-center">
-  <h1 class="mb-3">WAOW Workshop Day 1</h1>
-  <p class="lead">Simple CRUD app with Customers and Products using Flask + MySQL.</p>
-  <a href="{{ url_for('customers_page') }}" class="btn btn-primary me-2">Go to Customers</a>
-  <a href="{{ url_for('products_page') }}" class="btn btn-secondary">Go to Products</a>
-</div>
+<section class="page-card home-hero fade-in">
+  <div class="home-hero-main">
+    <span class="hero-badge">Flask + MySQL Workshop</span>
+
+    <h1 class="hero-title">WAOW Workshop Day 1</h1>
+
+    <p class="hero-subtitle">
+      Build a production-style CRUD dashboard with clean API routes, a custom frontend,
+      and persistent data stored in your local <code>shop</code> database. Monitor
+      customers and products in real time as you work.
+    </p>
+
+    <div class="hero-actions">
+      <a href="{{ url_for('customers_page') }}" class="btn-main">Go to Customers</a>
+      <a href="{{ url_for('products_page') }}" class="btn-outline">Go to Products</a>
+    </div>
+
+    <p class="hero-note">
+      Tip: update a record on the Customers or Products page and watch this overview refresh
+      with the latest data.
+    </p>
+  </div>
+
+  <div class="home-hero-side">
+    <div class="stat-card">
+      <div class="stat-label">Module</div>
+      <div class="stat-value">Day 1</div>
+      <div class="stat-hint">CRUD Foundations</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Entities</div>
+      <div class="stat-value">Customers &amp; Products</div>
+      <div class="stat-hint">Live REST API</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Stack</div>
+      <div class="stat-value">Flask &amp; MySQL</div>
+      <div class="stat-hint">Pure CSS &amp; Vanilla JS</div>
+    </div>
+  </div>
+</section>
+
+<section class="page-card home-preview fade-in">
+  <div class="preview-column">
+    <h2 class="preview-title">Recent Customers</h2>
+    <p class="preview-subtitle">
+      Snapshot of the latest customer profiles in your mall dataset.
+    </p>
+    <ul id="preview-customers" class="preview-list">
+      <li class="preview-empty">Loading customers...</li>
+    </ul>
+  </div>
+
+  <div class="preview-column">
+    <h2 class="preview-title">Recent Products</h2>
+    <p class="preview-subtitle">
+      Quick overview of products currently available in the catalog.
+    </p>
+    <ul id="preview-products" class="preview-list">
+      <li class="preview-empty">Loading products...</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
 {% endblock %}
