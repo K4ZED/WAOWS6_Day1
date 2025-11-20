@@ -430,3 +430,98 @@ body {
   font-size: 1.6rem;
   font-weight: 700;
 }
+
+.transaction-metrics {
+  margin-top: 12px;
+}
+
+.transaction-new {
+  margin-top: 18px;
+}
+
+.transaction-items {
+  margin-top: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.items-header h3 {
+  font-size: 1rem;
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) 0.7fr 0.9fr 1.1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.item-price,
+.item-subtotal {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  font-size: 0.9rem;
+}
+
+.transaction-summary {
+  margin: 14px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.transaction-list {
+  margin-top: 18px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.modal-card {
+  width: 520px;
+  max-width: 95%;
+  background: rgba(15, 23, 42, 0.98);
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.9);
+}
+
+.modal-body {
+  padding: 10px 0 14px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.modal-table th,
+.modal-table td {
+  font-size: 0.85rem;
+}
+
+.hidden {
+  display: none;
+}

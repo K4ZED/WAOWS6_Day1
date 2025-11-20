@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Transactions{% endblock %}
+
+{% block content %}
+<section class="page-card fade-in">
+  <h1 class="page-title">Transaction Management</h1>
+  <p class="page-subtitle">
+    Create new transactions, track sales, and review recent activity connected to your MySQL database.
+  </p>
+
+  <div class="home-metrics transaction-metrics">
+    <div class="metric-card metric-primary">
+      <div class="metric-label">Total Sales</div>
+      <div class="metric-value" id="tx-total-sales">$0.00</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Transactions</div>
+      <div class="metric-value" id="tx-total-count">0</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Average Transaction</div>
+      <div class="metric-value" id="tx-avg-amount">$0.00</div>
+    </div>
+  </div>
+</section>
+
+<section class="page-card fade-in transaction-new">
+  <h2 class="page-title">Buat Transaction Baru</h2>
+
+  <form id="transaction-form">
+    <div class="form-grid">
+      <div class="field">
+        <label for="tx-customer">Customer</label>
+        <select id="tx-customer" class="input">
+          <option value="">Pilih Customer</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="tx-payment">Payment Method</label>
+        <select id="tx-payment" class="input">
+          <option value="">Pilih Payment</option>
+          <option value="cash">Cash</option>
+          <option value="credit">Credit</option>
+          <option value="e-wallet">E-Wallet</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="transaction-items">
+      <div class="items-header">
+        <h3>Items</h3>
+      </div>
+
+      <div id="items-container"></div>
+
+      <button type="button" class="btn-outline" id="add-item-btn">
+        Tambah Item
+      </button>
+    </div>
+
+    <div class="transaction-summary">
+      <div>Total Items: <span id="summary-items">0</span></div>
+      <div>Total Amount: <span id="summary-amount">$0.00</span></div>
+    </div>
+
+    <button type="submit" class="btn-main">Buat Transaction</button>
+  </form>
+</section>
+
+<section class="page-card fade-in transaction-list">
+  <h2 class="page-title">Daftar Transactions</h2>
+  <p class="page-subtitle">Overview of all recorded transactions.</p>
+
+  <div class="table-card">
+    <table class="data-table" id="transactions-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Customer</th>
+          <th>Date</th>
+          <th>Items</th>
+          <th>Total Amount</th>
+          <th>Payment</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="7" class="empty-row">Loading transactions...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div id="items-modal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="items-modal-title">Transaction Items</h3>
+      <button type="button" class="btn-outline btn-small" id="items-modal-close">
+        Close
+      </button>
+    </div>
+    <div class="modal-body">
+      <table class="data-table modal-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="items-modal-body">
+          <tr>
+            <td colspan="4" class="empty-row">No items.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transactions.js') }}"></script>
+{% endblock %}

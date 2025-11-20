@@ -107,5 +107,116 @@ def delete_product(product_id):
     execute(sql, (product_id,))
     return jsonify({"message": "deleted"})
 
+@app.route("/transactions")
+def transactions_page():
+    return render_template("transactions.html")
+
+@app.route("/api/transactions")
+def get_transactions():
+    sql = """
+        SELECT
+            t.TransactionID,
+            t.CustomerID,
+            t.TransactionDate,
+            t.PaymentMethod,
+            t.TotalAmount,
+            (
+                SELECT COALESCE(SUM(d.Quantity), 0)
+                FROM transaction_details d
+                WHERE d.TransactionID = t.TransactionID
+            ) AS TotalItems
+        FROM transactions t
+        ORDER BY t.TransactionDate DESC
+    """
+    rows = query_all(sql)
+    return jsonify(rows)
+
+@app.route("/api/transactions", methods=["POST"])
+def create_transaction():
+    data = request.get_json()
+    customer_id = data.get("CustomerID")
+    payment_method = data.get("PaymentMethod")
+    items = data.get("Items", [])
+
+    if not items:
+        return jsonify({"error": "No items"}), 400
+
+    total_items = 0
+    total_amount = 0.0
+
+    for item in items:
+        qty = int(item.get("Quantity", 0))
+        price = float(item.get("UnitPrice", 0))
+        total_items += qty
+        total_amount += qty * price
+
+    tx_sql = """
+        INSERT INTO transactions (CustomerID, TransactionDate, TotalAmount, PaymentMethod)
+        VALUES (%s, NOW(), %s, %s)
+    """
+    tx_id = execute(tx_sql, (customer_id, total_amount, payment_method))
+
+    detail_sql = """
+        INSERT INTO transaction_details (TransactionID, ProductID, Quantity, UnitPrice, Subtotal)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+
+    for item in items:
+        qty = int(item.get("Quantity", 0))
+        price = float(item.get("UnitPrice", 0))
+        subtotal = qty * price
+
+        execute(
+            detail_sql,
+            (
+                tx_id,
+                item.get("ProductID"),
+                qty,
+                price,
+                subtotal,
+            ),
+        )
+
+        execute(
+            "UPDATE products SET Stock = Stock - %s WHERE ProductID = %s",
+            (qty, item.get("ProductID")),
+        )
+
+    return jsonify({"message": "created", "TransactionID": tx_id}), 201
+
+@app.route("/api/transactions/<int:transaction_id>")
+def get_transaction_detail(transaction_id):
+    header_sql = """
+        SELECT
+            t.TransactionID,
+            t.CustomerID,
+            t.TransactionDate,
+            t.TotalAmount,
+            t.PaymentMethod
+        FROM transactions t
+        WHERE t.TransactionID = %s
+    """
+    items_sql = """
+        SELECT
+            d.DetailID,
+            d.ProductID,
+            p.Name,
+            d.Quantity,
+            d.UnitPrice,
+            d.Subtotal
+        FROM transaction_details d
+        JOIN products p ON d.ProductID = p.ProductID
+        WHERE d.TransactionID = %s
+    """
+
+    header = query_all(header_sql, (transaction_id,))
+    if not header:
+        return jsonify({"error": "not found"}), 404
+
+    items = query_all(items_sql, (transaction_id,))
+    tx = header[0]
+    tx["Items"] = items
+    return jsonify(tx)
+
 if __name__ == "__main__":
     app.run(debug=True)
