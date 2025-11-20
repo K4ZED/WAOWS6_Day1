@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<div class="page-card fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">User Management</h1>
+      <p class="page-subtitle">
+        Kelola akun pengguna aplikasi: buat, ubah, nonaktifkan, dan hapus user.
+      </p>
+    </div>
+    <button id="btn-new-user" class="btn-main">
+      + Add User
+    </button>
+  </div>
+
+  <!-- FORM CREATE / EDIT -->
+  <div id="user-form-card" class="filter-bar" style="margin-top: 16px; display: none;">
+    <form id="user-form" class="form-grid">
+      <input type="hidden" id="user-id">
+
+      <div class="field">
+        <label for="user-email">Email</label>
+        <input id="user-email" type="email" class="input" placeholder="user@example.com" required>
+      </div>
+
+      <div class="field">
+        <label for="user-password">Password</label>
+        <input id="user-password" type="password" class="input" placeholder="••••••••">
+        <small class="field-hint" id="password-hint">
+          Untuk user baru wajib diisi, untuk edit boleh dikosongkan jika tidak ingin mengubah.
+        </small>
+      </div>
+
+      <div class="field">
+        <label for="user-role">Role</label>
+        <select id="user-role" class="input">
+          <option value="user">user</option>
+          <option value="admin">admin</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="user-active">Status</label>
+        <select id="user-active" class="input">
+          <option value="1">Active</option>
+          <option value="0">Inactive</option>
+        </select>
+      </div>
+
+      <div class="field" style="grid-column: 1 / -1; display:flex; gap:8px; margin-top:4px;">
+        <button type="submit" class="btn-main" id="user-submit-btn">
+          Save User
+        </button>
+        <button type="button" class="btn-soft" id="user-cancel-btn">
+          Cancel
+        </button>
+      </div>
+    </form>
+    <p id="user-form-message" class="page-subtitle" style="margin-top:6px;"></p>
+  </div>
+
+  <!-- TABLE LIST USERS -->
+  <div class="table-card" style="margin-top: 24px;">
+    <div class="table-header">
+      <h2 class="table-title">Daftar Users</h2>
+      <p class="table-subtitle">Overview semua akun terdaftar.</p>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:60px;">ID</th>
+            <th>Email</th>
+            <th style="width:120px;">Role</th>
+            <th style="width:120px;">Status</th>
+            <th style="width:140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <!-- rows by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <p id="users-message" class="page-subtitle" style="margin-top:8px;"></p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/users.js') }}"></script>
+{% endblock %}

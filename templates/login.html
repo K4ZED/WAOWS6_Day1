@@ -9,12 +9,26 @@
   <form id="login-form" class="form-grid">
     <div class="field" style="grid-column: 1 / -1;">
       <label for="login-email">Email</label>
-      <input id="login-email" type="email" class="input" placeholder="you@example.com" required>
+      <input
+        id="login-email"
+        type="email"
+        class="input"
+        placeholder="you@example.com"
+        required
+      >
     </div>
+
     <div class="field" style="grid-column: 1 / -1;">
       <label for="login-password">Password</label>
-      <input id="login-password" type="password" class="input" placeholder="••••••••" required>
+      <input
+        id="login-password"
+        type="password"
+        class="input"
+        placeholder="••••••••"
+        required
+      >
     </div>
+
     <div style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
       <button type="submit" class="btn-main">Login</button>
       <span class="page-subtitle" style="font-size:0.8rem;">
@@ -26,8 +40,4 @@
 
   <p id="auth-message" class="page-subtitle" style="margin-top:10px;"></p>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% endblock %}
