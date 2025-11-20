@@ -25,6 +25,15 @@
           <a href="{{ url_for('customers_page') }}" class="nav-link">Customers</a>
           <a href="{{ url_for('products_page') }}" class="nav-link">Products</a>
           <a href="{{ url_for('transactions_page') }}" class="nav-link">Transactions</a>
+
+          {% if session.get('user_id') %}
+            <span class="nav-link" style="opacity:.7;cursor:default;">
+              {{ session.get('user_email') }}
+            </span>
+            <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+          {% else %}
+            <a href="{{ url_for('login_page') }}" class="nav-link">Login</a>
+          {% endif %}
         </nav>
 
       </div>

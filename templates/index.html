@@ -9,19 +9,20 @@
     <h1 class="hero-title">WAOW Workshop Day 1</h1>
 
     <p class="hero-subtitle">
-      Build a production-style CRUD dashboard with clean API routes, a custom frontend,
-      and persistent data stored in your local <code>shop</code> database. Monitor
-      customers and products in real time as you work.
+      Build a production-style dashboard with clean API routes, a custom
+      frontend, and persistent data stored in your local <code>shop</code>
+      database. Manage customers, products, and transactions from a single view.
     </p>
 
     <div class="hero-actions">
       <a href="{{ url_for('customers_page') }}" class="btn-main">Go to Customers</a>
       <a href="{{ url_for('products_page') }}" class="btn-outline">Go to Products</a>
+      <a href="{{ url_for('transactions_page') }}" class="btn-outline">Go to Transactions</a>
     </div>
 
     <p class="hero-note">
-      Tip: update a record on the Customers or Products page and watch this overview refresh
-      with the latest data.
+      Tip: create a new transaction and watch the metrics and analytics update
+      automatically on this page.
     </p>
   </div>
 
@@ -34,8 +35,8 @@
 
     <div class="stat-card">
       <div class="stat-label">Entities</div>
-      <div class="stat-value">Customers &amp; Products</div>
-      <div class="stat-hint">Live REST API</div>
+      <div class="stat-value">Customers · Products</div>
+      <div class="stat-hint">Plus Transactions</div>
     </div>
 
     <div class="stat-card">
@@ -48,7 +49,7 @@
 
 <section class="home-metrics fade-in">
   <div class="metric-card metric-primary">
-    <div class="metric-label">Today's Sales</div>
+    <div class="metric-label">Total Sales</div>
     <div class="metric-value" id="metric-sales">$0</div>
   </div>
 
@@ -86,6 +87,24 @@
     </p>
     <ul id="preview-products" class="preview-list">
       <li class="preview-empty">Loading products...</li>
+    </ul>
+  </div>
+</section>
+
+<section class="page-card analytics-section fade-in">
+  <div class="analytics-column">
+    <h2 class="analytics-title">Top Customers</h2>
+    <p class="analytics-subtitle">Based on total transaction amount.</p>
+    <ul id="analytics-top-customers" class="analytics-list">
+      <li class="preview-empty">Waiting for data...</li>
+    </ul>
+  </div>
+
+  <div class="analytics-column">
+    <h2 class="analytics-title">Payment Breakdown</h2>
+    <p class="analytics-subtitle">Distribution of payment methods.</p>
+    <ul id="analytics-payment" class="analytics-list">
+      <li class="preview-empty">Waiting for data...</li>
     </ul>
   </div>
 </section>
