@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Admin Login{% endblock %}
+
+{% block content %}
+<div class="page-card fade-in" style="max-width: 420px; margin: 40px auto;">
+  <h1 class="page-title">Admin Login</h1>
+  <p class="page-subtitle">
+    Masukkan kredensial admin untuk membuka halaman rahasia /user.
+  </p>
+
+  <form id="admin-login-form" class="form-grid">
+    <div class="field" style="grid-column: 1 / -1;">
+      <label for="admin-email">Admin Email</label>
+      <input id="admin-email" type="email" class="input" required>
+    </div>
+
+    <div class="field" style="grid-column: 1 / -1;">
+      <label for="admin-password">Password</label>
+      <input id="admin-password" type="password" class="input" required>
+    </div>
+
+    <button type="submit" class="btn-main" style="margin-top: 10px;">Login as Admin</button>
+  </form>
+
+  <p id="admin-auth-message" class="page-subtitle" style="margin-top:10px;"></p>
+</div>
+{% endblock %}

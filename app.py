@@ -15,8 +15,14 @@ from config.db import query_all, execute
 
 app = Flask(__name__)
 CORS(app)
-app.secret_key = "waow_workshop_secret_key"  # ganti ke string random panjang
 
+# ganti dengan string random yang panjang untuk production
+app.secret_key = "waow_workshop_secret_key"
+
+
+# =========================
+#  Helpers & Decorators
+# =========================
 
 def hash_password(plain_password: str) -> str:
     return bcrypt.hashpw(
@@ -31,24 +37,50 @@ def check_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def login_required(f):
+    """Untuk halaman HTML biasa – redirect ke /login kalau belum login."""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "user_id" not in session:
             return redirect(url_for("login_page"))
         return f(*args, **kwargs)
-
     return wrapper
 
 
 def api_login_required(f):
+    """Untuk API JSON – balikin 401 JSON kalau belum login."""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "user_id" not in session:
             return jsonify({"error": "Login required"}), 401
         return f(*args, **kwargs)
-
     return wrapper
 
+
+def admin_required(f):
+    """Halaman HTML khusus admin (cek role)."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session or session.get("role") != "admin":
+            return redirect(url_for("admin_login_page"))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+def admin_api_required(f):
+    """API JSON khusus admin."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            return jsonify({"error": "Login required"}), 401
+        if session.get("role") != "admin":
+            return jsonify({"error": "Admin only"}), 403
+        return f(*args, **kwargs)
+    return wrapper
+
+
+# =========================
+#  Pages (HTML)
+# =========================
 
 @app.route("/")
 @login_required
@@ -70,6 +102,11 @@ def register_page():
     return render_template("register.html")
 
 
+@app.route("/admin-login")
+def admin_login_page():
+    return render_template("admin_login.html")
+
+
 @app.route("/customers")
 @login_required
 def customers_page():
@@ -88,9 +125,20 @@ def transactions_page():
     return render_template("transactions.html")
 
 
+# page rahasia admin
+@app.route("/user")
+@admin_required
+def users_page():
+    return render_template("users.html")
+
+
+# =========================
+#  Auth APIs
+# =========================
+
 @app.route("/api/register", methods=["POST"])
 def api_register():
-    data = request.get_json()
+    data = request.get_json() or {}
     email = data.get("Email") or data.get("email")
     password = data.get("Password") or data.get("password")
 
@@ -99,9 +147,10 @@ def api_register():
 
     hashed = hash_password(password)
 
+    # default role 'user'
     sql = """
-        INSERT INTO users (Email, Password, IsActive)
-        VALUES (%s, %s, 1)
+        INSERT INTO users (Email, Password, IsActive, Role)
+        VALUES (%s, %s, 1, 'user')
     """
     try:
         user_id = execute(sql, (email, hashed))
@@ -110,13 +159,16 @@ def api_register():
 
     session["user_id"] = user_id
     session["user_email"] = email
+    session["role"] = "user"
 
-    return jsonify({"message": "registered", "UserId": user_id, "Email": email}), 201
+    return jsonify(
+        {"message": "registered", "UserId": user_id, "Email": email, "Role": "user"}
+    ), 201
 
 
 @app.route("/api/login", methods=["POST"])
 def api_login():
-    data = request.get_json()
+    data = request.get_json() or {}
     email = data.get("Email") or data.get("email")
     password = data.get("Password") or data.get("password")
 
@@ -136,28 +188,69 @@ def api_login():
 
     session["user_id"] = user["UserId"]
     session["user_email"] = user["Email"]
+    session["role"] = user.get("Role", "user")
 
     return jsonify(
         {
             "message": "login_success",
             "UserId": user["UserId"],
             "Email": user["Email"],
+            "Role": session["role"],
+        }
+    )
+
+
+@app.route("/api/admin-login", methods=["POST"])
+def api_admin_login():
+    data = request.get_json() or {}
+    email = data.get("Email") or data.get("email")
+    password = data.get("Password") or data.get("password")
+
+    if not email or not password:
+        return jsonify({"error": "Email dan password wajib diisi."}), 400
+
+    sql = "SELECT * FROM users WHERE Email = %s AND IsActive = 1 AND Role = 'admin'"
+    rows = query_all(sql, (email,))
+
+    if not rows:
+        return jsonify({"error": "Admin user tidak ditemukan / tidak aktif."}), 404
+
+    user = rows[0]
+
+    if not check_password(password, user["Password"]):
+        return jsonify({"error": "Password salah."}), 401
+
+    # reset session lalu set sebagai admin
+    session.clear()
+    session["user_id"] = user["UserId"]
+    session["user_email"] = user["Email"]
+    session["role"] = "admin"
+
+    return jsonify(
+        {
+            "message": "admin_login_success",
+            "UserId": user["UserId"],
+            "Email": user["Email"],
+            "Role": "admin",
         }
     )
 
 
 @app.route("/api/logout", methods=["POST", "GET"])
-@app.route("/api/logout", methods=["POST", "GET"])
 def api_logout():
     session.clear()
+    # kalau dipanggil dari link langsung, redirect ke login
     if request.method == "GET":
         return redirect(url_for("login_page"))
     return jsonify({"message": "logged_out"})
 
+
+# untuk link logout di navbar
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login_page"))
+
 
 @app.route("/api/me")
 def api_me():
@@ -168,9 +261,134 @@ def api_me():
             "authenticated": True,
             "UserId": session.get("user_id"),
             "Email": session.get("user_email"),
+            "Role": session.get("role", "user"),
         }
     )
 
+
+# =========================
+#  CRUD USERS (ADMIN ONLY)
+# =========================
+
+@app.route("/api/users", methods=["GET"])
+@admin_api_required
+def list_users():
+    sql = """
+        SELECT UserId, Email, IsActive, Role, created_at
+        FROM users
+        ORDER BY UserId
+    """
+    rows = query_all(sql)
+    return jsonify(rows)
+
+
+@app.route("/api/users/<int:user_id>", methods=["GET"])
+@admin_api_required
+def get_user(user_id):
+    sql = """
+        SELECT UserId, Email, IsActive, Role, created_at
+        FROM users
+        WHERE UserId = %s
+    """
+    rows = query_all(sql, (user_id,))
+    if not rows:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify(rows[0])
+
+
+@app.route("/api/users", methods=["POST"])
+@admin_api_required
+def create_user():
+    data = request.get_json() or {}
+    email = data.get("Email") or data.get("email")
+    password = data.get("Password") or data.get("password")
+    is_active = data.get("IsActive")
+    role = data.get("Role") or data.get("role") or "user"
+
+    if is_active is None:
+        is_active = True
+
+    if not email or not password:
+        return jsonify({"error": "Email dan password wajib diisi."}), 400
+
+    hashed = hash_password(password)
+
+    sql = """
+        INSERT INTO users (Email, Password, IsActive, Role)
+        VALUES (%s, %s, %s, %s)
+    """
+    try:
+        user_id = execute(sql, (email, hashed, 1 if is_active else 0, role))
+    except Exception:
+        return jsonify({"error": "Email sudah terdaftar."}), 409
+
+    return jsonify(
+        {
+            "message": "created",
+            "UserId": user_id,
+            "Email": email,
+            "IsActive": bool(is_active),
+            "Role": role,
+        }
+    ), 201
+
+
+@app.route("/api/users/<int:user_id>", methods=["PUT"])
+@admin_api_required
+def update_user(user_id):
+    data = request.get_json() or {}
+
+    email = data.get("Email") or data.get("email")
+    password = data.get("Password") or data.get("password")
+    is_active = data.get("IsActive")
+    role = data.get("Role") or data.get("role")
+
+    fields = []
+    params = []
+
+    if email:
+        fields.append("Email = %s")
+        params.append(email)
+
+    if password:
+        hashed = hash_password(password)
+        fields.append("Password = %s")
+        params.append(hashed)
+
+    if is_active is not None:
+        fields.append("IsActive = %s")
+        params.append(1 if is_active else 0)
+
+    if role:
+        fields.append("Role = %s")
+        params.append(role)
+
+    if not fields:
+        return jsonify({"error": "Tidak ada field yang di-update."}), 400
+
+    params.append(user_id)
+    sql = f"UPDATE users SET {', '.join(fields)} WHERE UserId = %s"
+
+    try:
+        execute(sql, tuple(params))
+    except Exception:
+        return jsonify({"error": "Gagal update user (mungkin email duplikat)."}), 400
+
+    return jsonify({"message": "updated"})
+
+
+@app.route("/api/users/<int:user_id>", methods=["DELETE"])
+@admin_api_required
+def delete_user(user_id):
+    # soft delete: set IsActive = 0
+    sql = "UPDATE users SET IsActive = 0 WHERE UserId = %s"
+    execute(sql, (user_id,))
+    return jsonify({"message": "deactivated"})
+
+
+# =========================
+#  CUSTOMERS APIs
+# =========================
 
 @app.route("/api/customers", methods=["GET"])
 @api_login_required
@@ -182,7 +400,7 @@ def get_customers():
 @app.route("/api/customers", methods=["POST"])
 @api_login_required
 def create_customer():
-    data = request.get_json()
+    data = request.get_json() or {}
     sql = """
         INSERT INTO mall_customer (Gender, Age, Annual_Income, Spending_Score)
         VALUES (%s, %s, %s, %s)
@@ -200,7 +418,7 @@ def create_customer():
 @app.route("/api/customers/<int:customer_id>", methods=["PUT"])
 @api_login_required
 def update_customer(customer_id):
-    data = request.get_json()
+    data = request.get_json() or {}
     sql = """
         UPDATE mall_customer
         SET Gender=%s, Age=%s, Annual_Income=%s, Spending_Score=%s
@@ -225,6 +443,10 @@ def delete_customer(customer_id):
     return jsonify({"message": "deleted"})
 
 
+# =========================
+#  PRODUCTS APIs
+# =========================
+
 @app.route("/api/products", methods=["GET"])
 @api_login_required
 def get_products():
@@ -235,7 +457,7 @@ def get_products():
 @app.route("/api/products", methods=["POST"])
 @api_login_required
 def create_product():
-    data = request.get_json()
+    data = request.get_json() or {}
     sql = """
         INSERT INTO products (CategoryID, Name, Price, Stock)
         VALUES (%s, %s, %s, %s)
@@ -253,7 +475,7 @@ def create_product():
 @app.route("/api/products/<int:product_id>", methods=["PUT"])
 @api_login_required
 def update_product(product_id):
-    data = request.get_json()
+    data = request.get_json() or {}
     sql = """
         UPDATE products
         SET CategoryID=%s, Name=%s, Price=%s, Stock=%s
@@ -277,6 +499,10 @@ def delete_product(product_id):
     execute(sql, (product_id,))
     return jsonify({"message": "deleted"})
 
+
+# =========================
+#  TRANSACTIONS APIs
+# =========================
 
 @app.route("/api/transactions")
 @api_login_required
@@ -303,7 +529,7 @@ def get_transactions():
 @app.route("/api/transactions", methods=["POST"])
 @api_login_required
 def create_transaction():
-    data = request.get_json()
+    data = request.get_json() or {}
     customer_id = data.get("CustomerID")
     payment_method = data.get("PaymentMethod")
     items = data.get("Items", [])
