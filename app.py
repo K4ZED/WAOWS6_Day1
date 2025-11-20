@@ -1,28 +1,186 @@
-from flask import Flask, jsonify, request, render_template
+from flask import (
+    Flask,
+    jsonify,
+    request,
+    render_template,
+    session,
+    redirect,
+    url_for,
+)
 from flask_cors import CORS
+from functools import wraps
+import bcrypt
+
 from config.db import query_all, execute
 
 app = Flask(__name__)
 CORS(app)
+app.secret_key = "waow_workshop_secret_key"  # ganti ke string random panjang
+
+
+def hash_password(plain_password: str) -> str:
+    return bcrypt.hashpw(
+        plain_password.encode("utf-8"), bcrypt.gensalt()
+    ).decode("utf-8")
+
+
+def check_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
+
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login_page"))
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+def api_login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            return jsonify({"error": "Login required"}), 401
+        return f(*args, **kwargs)
+
+    return wrapper
+
 
 @app.route("/")
+@login_required
 def index():
     return render_template("index.html")
 
+
+@app.route("/login")
+def login_page():
+    if "user_id" in session:
+        return redirect(url_for("index"))
+    return render_template("login.html")
+
+
+@app.route("/register")
+def register_page():
+    if "user_id" in session:
+        return redirect(url_for("index"))
+    return render_template("register.html")
+
+
 @app.route("/customers")
+@login_required
 def customers_page():
     return render_template("customers.html")
 
+
 @app.route("/products")
+@login_required
 def products_page():
     return render_template("products.html")
 
+
+@app.route("/transactions")
+@login_required
+def transactions_page():
+    return render_template("transactions.html")
+
+
+@app.route("/api/register", methods=["POST"])
+def api_register():
+    data = request.get_json()
+    email = data.get("Email") or data.get("email")
+    password = data.get("Password") or data.get("password")
+
+    if not email or not password:
+        return jsonify({"error": "Email dan password wajib diisi."}), 400
+
+    hashed = hash_password(password)
+
+    sql = """
+        INSERT INTO users (Email, Password, IsActive)
+        VALUES (%s, %s, 1)
+    """
+    try:
+        user_id = execute(sql, (email, hashed))
+    except Exception:
+        return jsonify({"error": "Email sudah terdaftar."}), 409
+
+    session["user_id"] = user_id
+    session["user_email"] = email
+
+    return jsonify({"message": "registered", "UserId": user_id, "Email": email}), 201
+
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.get_json()
+    email = data.get("Email") or data.get("email")
+    password = data.get("Password") or data.get("password")
+
+    if not email or not password:
+        return jsonify({"error": "Email dan password wajib diisi."}), 400
+
+    sql = "SELECT * FROM users WHERE Email = %s AND IsActive = 1"
+    rows = query_all(sql, (email,))
+
+    if not rows:
+        return jsonify({"error": "Email tidak ditemukan / tidak aktif."}), 404
+
+    user = rows[0]
+
+    if not check_password(password, user["Password"]):
+        return jsonify({"error": "Password salah."}), 401
+
+    session["user_id"] = user["UserId"]
+    session["user_email"] = user["Email"]
+
+    return jsonify(
+        {
+            "message": "login_success",
+            "UserId": user["UserId"],
+            "Email": user["Email"],
+        }
+    )
+
+
+@app.route("/api/logout", methods=["POST", "GET"])
+@app.route("/api/logout", methods=["POST", "GET"])
+def api_logout():
+    session.clear()
+    if request.method == "GET":
+        return redirect(url_for("login_page"))
+    return jsonify({"message": "logged_out"})
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login_page"))
+
+@app.route("/api/me")
+def api_me():
+    if "user_id" not in session:
+        return jsonify({"authenticated": False})
+    return jsonify(
+        {
+            "authenticated": True,
+            "UserId": session.get("user_id"),
+            "Email": session.get("user_email"),
+        }
+    )
+
+
 @app.route("/api/customers", methods=["GET"])
+@api_login_required
 def get_customers():
     rows = query_all("SELECT * FROM mall_customer ORDER BY CustomerID")
     return jsonify(rows)
 
+
 @app.route("/api/customers", methods=["POST"])
+@api_login_required
 def create_customer():
     data = request.get_json()
     sql = """
@@ -38,7 +196,9 @@ def create_customer():
     new_id = execute(sql, params)
     return jsonify({"CustomerID": new_id}), 201
 
+
 @app.route("/api/customers/<int:customer_id>", methods=["PUT"])
+@api_login_required
 def update_customer(customer_id):
     data = request.get_json()
     sql = """
@@ -56,18 +216,24 @@ def update_customer(customer_id):
     execute(sql, params)
     return jsonify({"message": "updated"})
 
+
 @app.route("/api/customers/<int:customer_id>", methods=["DELETE"])
+@api_login_required
 def delete_customer(customer_id):
     sql = "DELETE FROM mall_customer WHERE CustomerID=%s"
     execute(sql, (customer_id,))
     return jsonify({"message": "deleted"})
 
+
 @app.route("/api/products", methods=["GET"])
+@api_login_required
 def get_products():
     rows = query_all("SELECT * FROM products ORDER BY ProductID")
     return jsonify(rows)
 
+
 @app.route("/api/products", methods=["POST"])
+@api_login_required
 def create_product():
     data = request.get_json()
     sql = """
@@ -83,7 +249,9 @@ def create_product():
     new_id = execute(sql, params)
     return jsonify({"ProductID": new_id}), 201
 
+
 @app.route("/api/products/<int:product_id>", methods=["PUT"])
+@api_login_required
 def update_product(product_id):
     data = request.get_json()
     sql = """
@@ -101,17 +269,17 @@ def update_product(product_id):
     execute(sql, params)
     return jsonify({"message": "updated"})
 
+
 @app.route("/api/products/<int:product_id>", methods=["DELETE"])
+@api_login_required
 def delete_product(product_id):
     sql = "DELETE FROM products WHERE ProductID=%s"
     execute(sql, (product_id,))
     return jsonify({"message": "deleted"})
 
-@app.route("/transactions")
-def transactions_page():
-    return render_template("transactions.html")
 
 @app.route("/api/transactions")
+@api_login_required
 def get_transactions():
     sql = """
         SELECT
@@ -131,7 +299,9 @@ def get_transactions():
     rows = query_all(sql)
     return jsonify(rows)
 
+
 @app.route("/api/transactions", methods=["POST"])
+@api_login_required
 def create_transaction():
     data = request.get_json()
     customer_id = data.get("CustomerID")
@@ -184,7 +354,9 @@ def create_transaction():
 
     return jsonify({"message": "created", "TransactionID": tx_id}), 201
 
+
 @app.route("/api/transactions/<int:transaction_id>")
+@api_login_required
 def get_transaction_detail(transaction_id):
     header_sql = """
         SELECT
@@ -217,6 +389,7 @@ def get_transaction_detail(transaction_id):
     tx = header[0]
     tx["Items"] = items
     return jsonify(tx)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
