@@ -15,9 +15,7 @@ from config.db import query_all, execute
 
 app = Flask(__name__)
 CORS(app)
-
-# ganti dengan string random yang panjang untuk production
-app.secret_key = "waow_workshop_secret_key"
+app.secret_key = "waow_workshop_secret_key"  # ganti ke string random panjang
 
 
 def hash_password(plain_password: str) -> str:
@@ -42,18 +40,33 @@ def login_required(f):
     return wrapper
 
 
+def api_login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            return jsonify({"error": "Login required"}), 401
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
 @app.route("/")
+@login_required
 def index():
     return render_template("index.html")
 
 
 @app.route("/login")
 def login_page():
+    if "user_id" in session:
+        return redirect(url_for("index"))
     return render_template("login.html")
 
 
 @app.route("/register")
 def register_page():
+    if "user_id" in session:
+        return redirect(url_for("index"))
     return render_template("register.html")
 
 
@@ -73,11 +86,6 @@ def products_page():
 @login_required
 def transactions_page():
     return render_template("transactions.html")
-
-
-# =======================
-#  AUTH APIs
-# =======================
 
 
 @app.route("/api/register", methods=["POST"])
@@ -139,10 +147,17 @@ def api_login():
 
 
 @app.route("/api/logout", methods=["POST", "GET"])
+@app.route("/api/logout", methods=["POST", "GET"])
 def api_logout():
     session.clear()
+    if request.method == "GET":
+        return redirect(url_for("login_page"))
     return jsonify({"message": "logged_out"})
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login_page"))
 
 @app.route("/api/me")
 def api_me():
@@ -157,18 +172,15 @@ def api_me():
     )
 
 
-# =======================
-#  CUSTOMERS APIs
-# =======================
-
-
 @app.route("/api/customers", methods=["GET"])
+@api_login_required
 def get_customers():
     rows = query_all("SELECT * FROM mall_customer ORDER BY CustomerID")
     return jsonify(rows)
 
 
 @app.route("/api/customers", methods=["POST"])
+@api_login_required
 def create_customer():
     data = request.get_json()
     sql = """
@@ -186,6 +198,7 @@ def create_customer():
 
 
 @app.route("/api/customers/<int:customer_id>", methods=["PUT"])
+@api_login_required
 def update_customer(customer_id):
     data = request.get_json()
     sql = """
@@ -205,24 +218,22 @@ def update_customer(customer_id):
 
 
 @app.route("/api/customers/<int:customer_id>", methods=["DELETE"])
+@api_login_required
 def delete_customer(customer_id):
     sql = "DELETE FROM mall_customer WHERE CustomerID=%s"
     execute(sql, (customer_id,))
     return jsonify({"message": "deleted"})
 
 
-# =======================
-#  PRODUCTS APIs
-# =======================
-
-
 @app.route("/api/products", methods=["GET"])
+@api_login_required
 def get_products():
     rows = query_all("SELECT * FROM products ORDER BY ProductID")
     return jsonify(rows)
 
 
 @app.route("/api/products", methods=["POST"])
+@api_login_required
 def create_product():
     data = request.get_json()
     sql = """
@@ -240,6 +251,7 @@ def create_product():
 
 
 @app.route("/api/products/<int:product_id>", methods=["PUT"])
+@api_login_required
 def update_product(product_id):
     data = request.get_json()
     sql = """
@@ -259,18 +271,15 @@ def update_product(product_id):
 
 
 @app.route("/api/products/<int:product_id>", methods=["DELETE"])
+@api_login_required
 def delete_product(product_id):
     sql = "DELETE FROM products WHERE ProductID=%s"
     execute(sql, (product_id,))
     return jsonify({"message": "deleted"})
 
 
-# =======================
-#  TRANSACTIONS APIs
-# =======================
-
-
 @app.route("/api/transactions")
+@api_login_required
 def get_transactions():
     sql = """
         SELECT
@@ -292,6 +301,7 @@ def get_transactions():
 
 
 @app.route("/api/transactions", methods=["POST"])
+@api_login_required
 def create_transaction():
     data = request.get_json()
     customer_id = data.get("CustomerID")
@@ -346,6 +356,7 @@ def create_transaction():
 
 
 @app.route("/api/transactions/<int:transaction_id>")
+@api_login_required
 def get_transaction_detail(transaction_id):
     header_sql = """
         SELECT
