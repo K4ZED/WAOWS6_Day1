@@ -1,11 +1,5 @@
 let editingUserId = null;
 
-function showUserForm(show) {
-  const card = document.querySelector("#user-form-card");
-  if (!card) return;
-  card.style.display = show ? "block" : "none";
-}
-
 function resetUserForm() {
   editingUserId = null;
   document.querySelector("#user-id").value = "";
@@ -14,20 +8,20 @@ function resetUserForm() {
   document.querySelector("#user-role").value = "user";
   document.querySelector("#user-active").value = "1";
   document.querySelector("#user-submit-btn").textContent = "Save User";
-  document.querySelector("#user-form-message").textContent = "";
+  const msg = document.querySelector("#user-form-message");
+  if (msg) {
+    msg.textContent = "";
+    msg.style.color = "";
+  }
 }
 
-/* =========================
-   LOAD USERS
-   ========================= */
 async function loadUsers() {
   const tbody = document.querySelector("#users-tbody");
   const msg = document.querySelector("#users-message");
-
   if (!tbody) return;
 
   tbody.innerHTML = `<tr><td colspan="5">Loading users...</td></tr>`;
-  msg.textContent = "";
+  if (msg) msg.textContent = "";
 
   try {
     const res = await fetch("/api/users");
@@ -35,8 +29,10 @@ async function loadUsers() {
 
     if (!res.ok) {
       tbody.innerHTML = `<tr><td colspan="5">Gagal memuat users.</td></tr>`;
-      msg.textContent = data.error || "Gagal memuat data users.";
-      msg.style.color = "#dc2626";
+      if (msg) {
+        msg.textContent = data.error || "Gagal memuat data users.";
+        msg.style.color = "#dc2626";
+      }
       return;
     }
 
@@ -48,39 +44,31 @@ async function loadUsers() {
     tbody.innerHTML = "";
     data.forEach(user => {
       const tr = document.createElement("tr");
-
       const statusLabel = user.IsActive ? "Active" : "Inactive";
       const statusClass = user.IsActive ? "badge-success" : "badge-muted";
 
       tr.innerHTML = `
         <td>${user.UserId}</td>
         <td>${user.Email}</td>
-        <td>
-          <span class="badge badge-role">${user.Role}</span>
-        </td>
-        <td>
-          <span class="badge ${statusClass}">${statusLabel}</span>
-        </td>
+        <td><span class="badge badge-role">${(user.Role || "").toUpperCase()}</span></td>
+        <td><span class="badge ${statusClass}">${statusLabel}</span></td>
         <td>
           <button class="btn-soft btn-xs" data-action="edit" data-id="${user.UserId}">Edit</button>
           <button class="btn-danger btn-xs" data-action="delete" data-id="${user.UserId}">Delete</button>
         </td>
       `;
-
       tbody.appendChild(tr);
     });
-
   } catch (err) {
     console.error(err);
     tbody.innerHTML = `<tr><td colspan="5">Error saat memuat users.</td></tr>`;
-    msg.textContent = "Terjadi kesalahan jaringan.";
-    msg.style.color = "#dc2626";
+    if (msg) {
+      msg.textContent = "Terjadi kesalahan jaringan.";
+      msg.style.color = "#dc2626";
+    }
   }
 }
 
-/* =========================
-   CREATE / UPDATE USER
-   ========================= */
 async function handleUserFormSubmit(e) {
   e.preventDefault();
 
@@ -97,13 +85,8 @@ async function handleUserFormSubmit(e) {
     return;
   }
 
-  const payload = {
-    Email: email,
-    Role: role,
-    IsActive: isActive
-  };
+  const payload = { Email: email, Role: role, IsActive: isActive };
 
-  // password hanya dikirim kalau diisi
   if (password) {
     payload.Password = password;
   } else if (!id) {
@@ -138,11 +121,7 @@ async function handleUserFormSubmit(e) {
     msg.style.color = "#16a34a";
 
     await loadUsers();
-    setTimeout(() => {
-      showUserForm(false);
-      resetUserForm();
-    }, 600);
-
+    resetUserForm();
   } catch (err) {
     console.error(err);
     msg.textContent = "Terjadi kesalahan jaringan.";
@@ -150,9 +129,6 @@ async function handleUserFormSubmit(e) {
   }
 }
 
-/* =========================
-   EDIT USER
-   ========================= */
 async function startEditUser(id) {
   const msg = document.querySelector("#user-form-message");
 
@@ -163,7 +139,6 @@ async function startEditUser(id) {
     if (!res.ok) {
       msg.textContent = data.error || "Gagal mengambil data user.";
       msg.style.color = "#dc2626";
-      showUserForm(true);
       return;
     }
 
@@ -176,20 +151,13 @@ async function startEditUser(id) {
     document.querySelector("#user-submit-btn").textContent = "Update User";
     msg.textContent = "";
     msg.style.color = "";
-
-    showUserForm(true);
-
   } catch (err) {
     console.error(err);
     msg.textContent = "Terjadi kesalahan jaringan saat mengambil data user.";
     msg.style.color = "#dc2626";
-    showUserForm(true);
   }
 }
 
-/* =========================
-   DELETE USER
-   ========================= */
 async function deleteUser(id) {
   const msg = document.querySelector("#users-message");
   if (!confirm("Yakin ingin menghapus / menonaktifkan user ini?")) return;
@@ -210,7 +178,6 @@ async function deleteUser(id) {
     msg.textContent = "User deleted / deactivated.";
     msg.style.color = "#16a34a";
     await loadUsers();
-
   } catch (err) {
     console.error(err);
     msg.textContent = "Terjadi kesalahan jaringan saat menghapus user.";
@@ -218,52 +185,36 @@ async function deleteUser(id) {
   }
 }
 
-/* =========================
-   INIT
-   ========================= */
 document.addEventListener("DOMContentLoaded", () => {
-  const usersPage = document.querySelector("#users-tbody");
-  if (!usersPage) return; // bukan di halaman /user
+  const tbody = document.querySelector("#users-tbody");
+  if (!tbody) return;
 
   loadUsers();
+  resetUserForm();
 
-  const btnNew = document.querySelector("#btn-new-user");
-  const btnCancel = document.querySelector("#user-cancel-btn");
   const form = document.querySelector("#user-form");
-  const tbody = document.querySelector("#users-tbody");
-
-  if (btnNew) {
-    btnNew.addEventListener("click", () => {
-      resetUserForm();
-      showUserForm(true);
-    });
-  }
-
-  if (btnCancel) {
-    btnCancel.addEventListener("click", () => {
-      resetUserForm();
-      showUserForm(false);
-    });
-  }
-
   if (form) {
     form.addEventListener("submit", handleUserFormSubmit);
   }
 
-  // event delegation untuk tombol Edit/Delete di tabel
-  if (tbody) {
-    tbody.addEventListener("click", (e) => {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-
-      const id = btn.getAttribute("data-id");
-      const action = btn.getAttribute("data-action");
-
-      if (action === "edit") {
-        startEditUser(id);
-      } else if (action === "delete") {
-        deleteUser(id);
-      }
+  const resetBtn = document.querySelector("#user-reset-btn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      resetUserForm();
     });
   }
+
+  tbody.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+
+    const id = btn.getAttribute("data-id");
+    const action = btn.getAttribute("data-action");
+
+    if (action === "edit") {
+      startEditUser(id);
+    } else if (action === "delete") {
+      deleteUser(id);
+    }
+  });
 });

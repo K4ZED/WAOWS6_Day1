@@ -1,315 +1,461 @@
-const txCustomerSelect = document.querySelector("#tx-customer");
-const txPaymentSelect = document.querySelector("#tx-payment");
-const itemsContainer = document.querySelector("#items-container");
-const addItemBtn = document.querySelector("#add-item-btn");
-const txForm = document.querySelector("#transaction-form");
+const currency = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD"
+});
 
-const summaryItems = document.querySelector("#summary-items");
-const summaryAmount = document.querySelector("#summary-amount");
+let PRODUCTS = [];
+let PRODUCTS_BY_ID = {};
 
-const txTableBody = document.querySelector("#transactions-table tbody");
-
-const metricTotalSales = document.querySelector("#tx-total-sales");
-const metricTotalCount = document.querySelector("#tx-total-count");
-const metricAvgAmount = document.querySelector("#tx-avg-amount");
-
-const itemsModal = document.querySelector("#items-modal");
-const itemsModalClose = document.querySelector("#items-modal-close");
-const itemsModalTitle = document.querySelector("#items-modal-title");
-const itemsModalBody = document.querySelector("#items-modal-body");
-
-let productsCache = [];
-let customersCache = [];
+function fmtMoney(value) {
+  const num = Number(value) || 0;
+  return currency.format(num);
+}
 
 async function loadCustomers() {
-  const res = await fetch("/api/customers");
-  if (!res.ok) return;
-  customersCache = await res.json();
+  const select = document.getElementById("tx-customer");
+  if (!select) return;
 
-  customersCache.forEach((c) => {
-    const opt = document.createElement("option");
-    opt.value = c.CustomerID;
-    opt.textContent = `#${c.CustomerID} - ${c.Gender}`;
-    txCustomerSelect.appendChild(opt);
-  });
+  try {
+    const res = await fetch("/api/customers");
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Failed to load customers", data);
+      return;
+    }
+
+    select.innerHTML = `<option value="">Pilih Customer</option>`;
+    data.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.CustomerID;
+      opt.textContent = `#${c.CustomerID} — ${c.Gender || "Unknown"} (${c.Age})`;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error loading customers", err);
+  }
 }
 
 async function loadProducts() {
-  const res = await fetch("/api/products");
-  if (!res.ok) return;
-  productsCache = await res.json();
+  try {
+    const res = await fetch("/api/products");
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Failed to load products", data);
+      return;
+    }
+
+    PRODUCTS = data;
+    PRODUCTS_BY_ID = {};
+    data.forEach(p => {
+      PRODUCTS_BY_ID[p.ProductID] = p;
+    });
+
+    if (!document.querySelector(".tx-item-row")) {
+      addItemRow();
+    } else {
+      refreshAllProductSelects();
+    }
+  } catch (err) {
+    console.error("Error loading products", err);
+  }
 }
 
-function createItemRow() {
-  const row = document.createElement("div");
-  row.className = "item-row";
+function createProductSelect() {
+  const select = document.createElement("select");
+  select.className = "input tx-item-product";
 
-  const productSelect = document.createElement("select");
-  productSelect.className = "input item-product";
-  productSelect.innerHTML = `<option value="">Pilih Product</option>`;
-  productsCache.forEach((p) => {
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Pilih Product";
+  select.appendChild(placeholder);
+
+  PRODUCTS.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.ProductID;
-    opt.textContent = p.Name;
-    productSelect.appendChild(opt);
+    opt.textContent = `${p.Name} (#${p.ProductID})`;
+    select.appendChild(opt);
   });
+
+  return select;
+}
+
+function refreshAllProductSelects() {
+  const selects = document.querySelectorAll(".tx-item-product");
+  selects.forEach(oldSel => {
+    const currentValue = oldSel.value;
+    const newSel = createProductSelect();
+    newSel.value = currentValue;
+    newSel.addEventListener("change", onProductChange);
+    oldSel.replaceWith(newSel);
+  });
+}
+
+function addItemRow() {
+  const container = document.getElementById("items-container");
+  if (!container) return;
+
+  const row = document.createElement("div");
+  row.className = "tx-item-row";
+
+  const productSelect = createProductSelect();
+  productSelect.addEventListener("change", onProductChange);
 
   const qtyInput = document.createElement("input");
   qtyInput.type = "number";
   qtyInput.min = "1";
   qtyInput.value = "1";
-  qtyInput.className = "input item-qty";
+  qtyInput.className = "input tx-item-qty";
+  qtyInput.addEventListener("input", () => updateRowSubtotal(row));
 
-  const priceDiv = document.createElement("div");
-  priceDiv.className = "item-price";
-  priceDiv.textContent = "0.00";
+  const priceInput = document.createElement("input");
+  priceInput.type = "number";
+  priceInput.min = "0";
+  priceInput.step = "0.01";
+  priceInput.value = "";
+  priceInput.className = "input tx-item-price";
+  priceInput.addEventListener("input", () => updateRowSubtotal(row));
 
-  const subtotalDiv = document.createElement("div");
-  subtotalDiv.className = "item-subtotal";
-  subtotalDiv.textContent = "0.00";
+  const subtotalInput = document.createElement("input");
+  subtotalInput.type = "text";
+  subtotalInput.readOnly = true;
+  subtotalInput.className = "input tx-item-subtotal";
+  subtotalInput.value = "0.00";
 
   const removeBtn = document.createElement("button");
   removeBtn.type = "button";
-  removeBtn.className = "btn-danger btn-small item-remove";
+  removeBtn.className = "btn-danger btn-xs tx-item-remove";
   removeBtn.textContent = "Hapus";
+  removeBtn.addEventListener("click", () => {
+    row.remove();
+    updateSummary();
+  });
 
   row.appendChild(productSelect);
   row.appendChild(qtyInput);
-  row.appendChild(priceDiv);
-  row.appendChild(subtotalDiv);
+  row.appendChild(priceInput);
+  row.appendChild(subtotalInput);
   row.appendChild(removeBtn);
 
-  itemsContainer.appendChild(row);
-
-  productSelect.addEventListener("change", recalcTotals);
-  qtyInput.addEventListener("input", recalcTotals);
-  removeBtn.addEventListener("click", () => {
-    row.remove();
-    recalcTotals();
-  });
-
-  recalcTotals();
+  container.appendChild(row);
+  updateSummary();
 }
 
-function recalcTotals() {
+function onProductChange(e) {
+  const select = e.target;
+  const row = select.closest(".tx-item-row");
+  if (!row) return;
+
+  const productId = select.value;
+  const priceInput = row.querySelector(".tx-item-price");
+
+  if (productId && PRODUCTS_BY_ID[productId]) {
+    priceInput.value = PRODUCTS_BY_ID[productId].Price;
+  } else {
+    priceInput.value = "";
+  }
+
+  updateRowSubtotal(row);
+}
+
+function updateRowSubtotal(row) {
+  const qtyInput = row.querySelector(".tx-item-qty");
+  const priceInput = row.querySelector(".tx-item-price");
+  const subtotalInput = row.querySelector(".tx-item-subtotal");
+
+  const qty = Number(qtyInput.value) || 0;
+  const price = Number(priceInput.value) || 0;
+  const subtotal = qty * price;
+
+  subtotalInput.value = subtotal.toFixed(2);
+  updateSummary();
+}
+
+function updateSummary() {
+  const rows = document.querySelectorAll(".tx-item-row");
   let totalItems = 0;
   let totalAmount = 0;
 
-  const rows = itemsContainer.querySelectorAll(".item-row");
-  rows.forEach((row) => {
-    const productSelect = row.querySelector(".item-product");
-    const qtyInput = row.querySelector(".item-qty");
-    const priceDiv = row.querySelector(".item-price");
-    const subtotalDiv = row.querySelector(".item-subtotal");
-
-    const productId = Number(productSelect.value);
-    const qty = Number(qtyInput.value) || 0;
-    const product = productsCache.find((p) => p.ProductID === productId);
-    const unitPrice = product ? Number(product.Price) : 0;
-    const subtotal = unitPrice * qty;
-
-    priceDiv.textContent = unitPrice.toFixed(2);
-    subtotalDiv.textContent = subtotal.toFixed(2);
-
+  rows.forEach(row => {
+    const qty = Number(row.querySelector(".tx-item-qty").value) || 0;
+    const subtotal = Number(row.querySelector(".tx-item-subtotal").value) || 0;
     totalItems += qty;
     totalAmount += subtotal;
   });
 
-  summaryItems.textContent = totalItems;
-  summaryAmount.textContent = "$" + totalAmount.toFixed(2);
+  const itemsSpan = document.getElementById("summary-items");
+  const amountSpan = document.getElementById("summary-amount");
+
+  if (itemsSpan) itemsSpan.textContent = totalItems;
+  if (amountSpan) amountSpan.textContent = fmtMoney(totalAmount);
 }
 
-async function loadTransactions() {
-  try {
-    txTableBody.innerHTML =
-      '<tr><td colspan="7" class="empty-row">Loading transactions...</td></tr>';
-
-    const res = await fetch("/api/transactions");
-    if (!res.ok) throw new Error("failed");
-
-    const data = await res.json();
-    txTableBody.innerHTML = "";
-
-    if (!data.length) {
-      txTableBody.innerHTML =
-        '<tr><td colspan="7" class="empty-row">No transactions yet.</td></tr>';
-    }
-
-    let totalAmount = 0;
-    data.forEach((t) => {
-      const tr = document.createElement("tr");
-      const amount = Number(t.TotalAmount || 0);
-      totalAmount += amount;
-
-      const date = t.TransactionDate
-        ? new Date(t.TransactionDate).toLocaleDateString()
-        : "-";
-
-      const customerLabel =
-        t.CustomerID || t.CustomerID === 0 ? `#${t.CustomerID}` : "Unknown";
-
-      tr.innerHTML = `
-        <td>${t.TransactionID}</td>
-        <td>${customerLabel}</td>
-        <td>${date}</td>
-        <td>${t.TotalItems}</td>
-        <td>$${amount.toFixed(2)}</td>
-        <td>${t.PaymentMethod || "-"}</td>
-        <td class="col-actions">
-          <button class="btn-outline btn-small" data-view-items="${t.TransactionID}">
-            View Items
-          </button>
-        </td>
-      `;
-      txTableBody.appendChild(tr);
-    });
-
-    if (metricTotalCount) {
-      metricTotalCount.textContent = data.length;
-    }
-    if (metricTotalSales) {
-      metricTotalSales.textContent = "$" + totalAmount.toFixed(2);
-    }
-    if (metricAvgAmount) {
-      const avg = data.length ? totalAmount / data.length : 0;
-      metricAvgAmount.textContent = "$" + avg.toFixed(2);
-    }
-  } catch (err) {
-    console.error(err);
-    txTableBody.innerHTML =
-      '<tr><td colspan="7" class="error-row">Failed to load transactions.</td></tr>';
-    if (metricTotalCount) metricTotalCount.textContent = "0";
-    if (metricTotalSales) metricTotalSales.textContent = "$0.00";
-    if (metricAvgAmount) metricAvgAmount.textContent = "$0.00";
-  }
-}
-
-async function openItemsModal(transactionId) {
-  try {
-    const res = await fetch(`/api/transactions/${transactionId}`);
-    if (!res.ok) throw new Error("failed detail");
-
-    const data = await res.json();
-
-    itemsModalTitle.textContent = `Transaction #${data.TransactionID}`;
-    const items = data.Items || [];
-
-    itemsModalBody.innerHTML = "";
-
-    if (!items.length) {
-      itemsModalBody.innerHTML =
-        '<tr><td colspan="4" class="empty-row">No items for this transaction.</td></tr>';
-    } else {
-      items.forEach((item) => {
-        const tr = document.createElement("tr");
-        const unit = Number(item.UnitPrice || 0);
-        const sub = Number(item.Subtotal || 0);
-
-        tr.innerHTML = `
-          <td>${item.Name || item.ProductID}</td>
-          <td>${item.Quantity}</td>
-          <td>$${unit.toFixed(2)}</td>
-          <td>$${sub.toFixed(2)}</td>
-        `;
-        itemsModalBody.appendChild(tr);
-      });
-    }
-
-    itemsModal.classList.remove("hidden");
-  } catch (err) {
-    console.error(err);
-    alert("Failed to load transaction items.");
-  }
-}
-
-txForm.addEventListener("submit", async (e) => {
+async function handleTransactionSubmit(e) {
   e.preventDefault();
 
-  const customerId = txCustomerSelect.value || null;
-  const paymentMethod = txPaymentSelect.value || null;
+  const customerId = document.getElementById("tx-customer").value;
+  const payment = document.getElementById("tx-payment").value;
+  const rows = document.querySelectorAll(".tx-item-row");
 
-  const rows = itemsContainer.querySelectorAll(".item-row");
-  const items = [];
-
-  rows.forEach((row) => {
-    const productSelect = row.querySelector(".item-product");
-    const qtyInput = row.querySelector(".item-qty");
-    const priceDiv = row.querySelector(".item-price");
-    const subtotalDiv = row.querySelector(".item-subtotal");
-
-    const productId = Number(productSelect.value);
-    const qty = Number(qtyInput.value) || 0;
-    const unitPrice = Number(priceDiv.textContent) || 0;
-    const subtotal = Number(subtotalDiv.textContent) || 0;
-
-    if (productId && qty > 0) {
-      items.push({
-        ProductID: productId,
-        Quantity: qty,
-        UnitPrice: unitPrice,
-        Subtotal: subtotal,
-      });
-    }
-  });
-
-  if (!items.length) {
+  if (!customerId) {
+    alert("Silakan pilih customer terlebih dahulu.");
+    return;
+  }
+  if (!payment) {
+    alert("Silakan pilih metode pembayaran.");
+    return;
+  }
+  if (rows.length === 0) {
     alert("Tambahkan minimal satu item.");
     return;
   }
 
+  const items = [];
+  rows.forEach(row => {
+    const productId = row.querySelector(".tx-item-product").value;
+    const qty = Number(row.querySelector(".tx-item-qty").value) || 0;
+    const unitPrice = Number(row.querySelector(".tx-item-price").value) || 0;
+
+    if (!productId || qty <= 0 || unitPrice < 0) return;
+
+    items.push({
+      ProductID: Number(productId),
+      Quantity: qty,
+      UnitPrice: unitPrice
+    });
+  });
+
+  if (items.length === 0) {
+    alert("Item belum lengkap. Pastikan product, qty, dan price terisi.");
+    return;
+  }
+
   const payload = {
-    CustomerID: customerId,
-    PaymentMethod: paymentMethod,
-    Items: items,
+    CustomerID: Number(customerId),
+    PaymentMethod: payment,
+    Items: items
   };
 
   try {
     const res = await fetch("/api/transactions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      console.error(await res.text());
-      alert("Gagal membuat transaksi.");
+      console.error("Create transaction failed", data);
+      alert(data.error || "Gagal membuat transaksi.");
       return;
     }
 
-    itemsContainer.innerHTML = "";
-    createItemRow();
-    summaryItems.textContent = "0";
-    summaryAmount.textContent = "$0.00";
-    txPaymentSelect.value = "";
-    txCustomerSelect.value = "";
+    alert("Transaksi berhasil dibuat.");
+    document.getElementById("transaction-form").reset();
 
-    await loadTransactions();
+    const container = document.getElementById("items-container");
+    if (container) container.innerHTML = "";
+
+    addItemRow();
+    updateSummary();
+    loadTransactions();
   } catch (err) {
-    console.error(err);
-    alert("Network error.");
+    console.error("Error creating transaction", err);
+    alert("Terjadi kesalahan jaringan saat membuat transaksi.");
   }
-});
+}
 
-txTableBody.addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-view-items]");
-  if (!btn) return;
-  const id = btn.getAttribute("data-view-items");
-  if (!id) return;
-  openItemsModal(id);
-});
+async function loadTransactions() {
+  const tableBody = document.querySelector("#transactions-table tbody");
+  if (!tableBody) return;
 
-itemsModalClose.addEventListener("click", () => {
-  itemsModal.classList.add("hidden");
-});
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="7" class="empty-row">Loading transactions...</td>
+    </tr>
+  `;
 
-itemsModal.addEventListener("click", (e) => {
-  if (e.target === itemsModal) {
-    itemsModal.classList.add("hidden");
+  try {
+    const res = await fetch("/api/transactions");
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Failed to load transactions", data);
+      tableBody.innerHTML = `
+        <tr><td colspan="7" class="empty-row">Gagal memuat transaksi.</td></tr>
+      `;
+      return;
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      tableBody.innerHTML = `
+        <tr><td colspan="7" class="empty-row">Belum ada transaksi.</td></tr>
+      `;
+      updateMetrics([], 0, 0);
+      return;
+    }
+
+    tableBody.innerHTML = "";
+    let totalSales = 0;
+    let totalItemsAll = 0;
+
+    data.forEach(tx => {
+      const tr = document.createElement("tr");
+
+      const amount = Number(tx.TotalAmount) || 0;
+      const itemsCount = Number(tx.TotalItems) || 0;
+      totalSales += amount;
+      totalItemsAll += itemsCount;
+
+      tr.innerHTML = `
+        <td>${tx.TransactionID}</td>
+        <td>#${tx.CustomerID}</td>
+        <td>${tx.TransactionDate || ""}</td>
+        <td>${itemsCount}</td>
+        <td>${fmtMoney(amount)}</td>
+        <td>${tx.PaymentMethod || ""}</td>
+        <td>
+          <button
+            type="button"
+            class="btn-soft btn-xs tx-view-items"
+            data-id="${tx.TransactionID}"
+          >
+            View Items
+          </button>
+        </td>
+      `;
+
+      tableBody.appendChild(tr);
+    });
+
+    updateMetrics(data, totalSales, totalItemsAll);
+  } catch (err) {
+    console.error("Error loading transactions", err);
+    tableBody.innerHTML = `
+      <tr><td colspan="7" class="empty-row">Error saat memuat transaksi.</td></tr>
+    `;
   }
-});
+}
 
-document.addEventListener("DOMContentLoaded", async () => {
-  await Promise.all([loadCustomers(), loadProducts()]);
-  createItemRow();
+function updateMetrics(transactions, totalSales) {
+  const totalCount = Array.isArray(transactions) ? transactions.length : 0;
+  const avg = totalCount > 0 ? totalSales / totalCount : 0;
+
+  const totalSalesEl = document.getElementById("tx-total-sales");
+  const totalCountEl = document.getElementById("tx-total-count");
+  const avgAmountEl = document.getElementById("tx-avg-amount");
+
+  if (totalSalesEl) totalSalesEl.textContent = fmtMoney(totalSales);
+  if (totalCountEl) totalCountEl.textContent = totalCount;
+  if (avgAmountEl) avgAmountEl.textContent = fmtMoney(avg);
+}
+
+function openItemsModal(txId) {
+  const overlay = document.getElementById("items-modal");
+  if (!overlay) return;
+
+  const title = document.getElementById("items-modal-title");
+  const body = document.getElementById("items-modal-body");
+
+  if (title) title.textContent = `Transaction #${txId} Items`;
+  if (body) {
+    body.innerHTML = `
+      <tr><td colspan="4" class="empty-row">Loading...</td></tr>
+    `;
+  }
+
+  overlay.classList.remove("hidden");
+
+  fetch(`/api/transactions/${txId}`)
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (!body) return;
+      if (!ok) {
+        console.error("Failed to load transaction detail", data);
+        body.innerHTML = `
+          <tr><td colspan="4" class="empty-row">Gagal memuat item.</td></tr>
+        `;
+        return;
+      }
+
+      const items = Array.isArray(data.Items) ? data.Items : [];
+      if (items.length === 0) {
+        body.innerHTML = `
+          <tr><td colspan="4" class="empty-row">No items.</td></tr>
+        `;
+        return;
+      }
+
+      body.innerHTML = "";
+      items.forEach(it => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${it.Name || `#${it.ProductID}`}</td>
+          <td>${it.Quantity}</td>
+          <td>${fmtMoney(it.UnitPrice)}</td>
+          <td>${fmtMoney(it.Subtotal)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    })
+    .catch(err => {
+      console.error("Error loading transaction detail", err);
+      if (body) {
+        body.innerHTML = `
+          <tr><td colspan="4" class="empty-row">Error saat memuat item.</td></tr>
+        `;
+      }
+    });
+}
+
+function closeItemsModal() {
+  const overlay = document.getElementById("items-modal");
+  if (!overlay) return;
+  overlay.classList.add("hidden");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("transaction-form");
+  const itemsContainer = document.getElementById("items-container");
+  if (!form || !itemsContainer) return;
+
+  loadCustomers();
+  loadProducts();
   loadTransactions();
+
+  const addItemBtn = document.getElementById("add-item-btn");
+  if (addItemBtn) {
+    addItemBtn.addEventListener("click", () => {
+      addItemRow();
+    });
+  }
+
+  form.addEventListener("submit", handleTransactionSubmit);
+
+  const txTable = document.getElementById("transactions-table");
+  if (txTable) {
+    txTable.addEventListener("click", e => {
+      const btn = e.target.closest(".tx-view-items");
+      if (!btn) return;
+      const txId = btn.getAttribute("data-id");
+      if (!txId) return;
+      openItemsModal(txId);
+    });
+  }
+
+  const closeBtn = document.getElementById("items-modal-close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeItemsModal);
+  }
+
+  const overlay = document.getElementById("items-modal");
+  if (overlay) {
+    overlay.addEventListener("click", e => {
+      if (e.target === overlay) {
+        closeItemsModal();
+      }
+    });
+  }
 });

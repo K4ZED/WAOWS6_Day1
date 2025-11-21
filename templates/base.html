@@ -1,56 +1,43 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}WAOW Shop{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
 
-    <title>{% block title %}WAOW Shop{% endblock %}</title>
+<header class="app-header">
+  <div class="app-header-inner">
+    <div class="brand">
+      WAOWS6 <span class="brand-sub">Ken – Day 1</span>
+    </div>
 
-    <!-- CSS utama -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  </head>
+    <nav class="nav-links">
+      <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+      <a href="{{ url_for('customers_page') }}" class="nav-link">Customers</a>
+      <a href="{{ url_for('products_page') }}" class="nav-link">Products</a>
+      <a href="{{ url_for('transactions_page') }}" class="nav-link">Transactions</a>
 
-  <body>
+      {% if session.get('user_id') %}
+        <span class="nav-link" style="opacity:.7;cursor:default;">{{ session.get('user_email') }}</span>
+        <a href="{{ url_for('api_logout') }}">Logout</a>
+      {% else %}
+        <a href="{{ url_for('login_page') }}" class="nav-link">Login</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
 
-    <!-- NAVBAR -->
-    <header class="app-header">
-      <div class="app-header-inner">
+<main class="app-main">
+  <div class="app-container">
+    {% block content %}{% endblock %}
+  </div>
+</main>
 
-        <div class="brand">
-          WAOWS6 <span class="brand-sub">Ken – Day 1</span>
-        </div>
+{% block scripts %}{% endblock %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 
-        <nav class="nav-links">
-          <a href="{{ url_for('index') }}" class="nav-link">Home</a>
-          <a href="{{ url_for('customers_page') }}" class="nav-link">Customers</a>
-          <a href="{{ url_for('products_page') }}" class="nav-link">Products</a>
-          <a href="{{ url_for('transactions_page') }}" class="nav-link">Transactions</a>
-
-          {% if session.get('user_id') %}
-            <span class="nav-link" style="opacity:.7;cursor:default;">
-              {{ session.get('user_email') }}
-            </span>
-            <a href="{{ url_for('api_logout') }}">Logout</a>
-          {% else %}
-            <a href="{{ url_for('login_page') }}" class="nav-link">Login</a>
-          {% endif %}
-        </nav>
-
-      </div>
-    </header>
-
-    <!-- MAIN CONTENT -->
-    <main class="app-main">
-      <div class="app-container">
-        {% block content %}{% endblock %}
-      </div>
-    </main>
-
-    <!-- PAGE-SPECIFIC JS -->
-    {% block scripts %}{% endblock %}
-
-    <!-- 🔥 Tambahkan auth.js disini -->
-    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
-
-  </body>
+</body>
 </html>
