@@ -450,9 +450,12 @@ def delete_customer(customer_id):
 @app.route("/api/products", methods=["GET"])
 @api_login_required
 def get_products():
-    rows = query_all("SELECT * FROM products ORDER BY ProductID")
-    return jsonify(rows)
-
+    sql = "SELECT * FROM products ORDER BY ProductID"
+    try:
+        rows = query_all(sql)
+        return jsonify(rows)
+    except Exception as e:
+        return jsonify({"error": f"Database error: {e}"}), 500
 
 
 @app.route("/api/products", methods=["POST"])
@@ -480,35 +483,51 @@ def create_product():
     try:
         new_id = execute(sql, params)
     except Exception as e:
-        # biar gak balas HTML error page
+        # di sini termasuk error foreign key, dll
         return jsonify({"error": f"Database error: {e}"}), 500
 
     return jsonify({"ProductID": new_id}), 201
 
+
 @app.route("/api/products/<int:product_id>", methods=["PUT"])
 @api_login_required
 def update_product(product_id):
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
+
+    try:
+        category_id = int(data.get("CategoryID", 0))
+        name = (data.get("Name") or "").strip()
+        price = float(data.get("Price", 0))
+        stock = int(data.get("Stock", 0))
+    except (TypeError, ValueError) as e:
+        return jsonify({"error": f"Invalid input: {e}"}), 400
+
+    if not name:
+        return jsonify({"error": "Name wajib diisi."}), 400
+
     sql = """
         UPDATE products
         SET CategoryID=%s, Name=%s, Price=%s, Stock=%s
         WHERE ProductID=%s
     """
-    params = (
-        data.get("CategoryID"),
-        data.get("Name"),
-        data.get("Price"),
-        data.get("Stock"),
-        product_id,
-    )
-    execute(sql, params)
+    params = (category_id, name, price, stock, product_id)
+
+    try:
+        execute(sql, params)
+    except Exception as e:
+        return jsonify({"error": f"Database error: {e}"}), 500
+
     return jsonify({"message": "updated"})
+
 
 @app.route("/api/products/<int:product_id>", methods=["DELETE"])
 @api_login_required
 def delete_product(product_id):
     sql = "DELETE FROM products WHERE ProductID=%s"
-    execute(sql, (product_id,))
+    try:
+        execute(sql, (product_id,))
+    except Exception as e:
+        return jsonify({"error": f"Database error: {e}"}), 500
     return jsonify({"message": "deleted"})
 
 
