@@ -9,72 +9,45 @@
     connected to your MySQL database.
   </p>
 
-  <!-- FORM PRODUCTS -->
   <form id="product-form">
-    <!-- hidden untuk edit -->
-    <input type="hidden" id="product-id" />
+    <input type="hidden" id="product-id"/>
 
     <div class="form-grid">
       <div class="field">
         <label for="product-category">Category ID</label>
-        <input
-          id="product-category"
-          class="input"
-          type="number"
-          placeholder="e.g. 1"
-        />
+        <input id="product-category" class="input" type="number" placeholder="e.g. 1"/>
       </div>
 
       <div class="field">
         <label for="product-name">Name</label>
-        <input
-          id="product-name"
-          class="input"
-          type="text"
-          placeholder="e.g. Wireless Headphone"
-        />
+        <input id="product-name" class="input" type="text" placeholder="e.g. Wireless Headphone"/>
       </div>
 
       <div class="field">
         <label for="product-price">Price</label>
-        <input
-          id="product-price"
-          class="input"
-          type="number"
-          step="0.01"
-          placeholder="e.g. 99.99"
-        />
+        <input id="product-price" class="input" type="number" step="0.01" placeholder="e.g. 99.99"/>
       </div>
 
       <div class="field">
         <label for="product-stock">Stock</label>
-        <input
-          id="product-stock"
-          class="input"
-          type="number"
-          placeholder="e.g. 20"
-        />
+        <input id="product-stock" class="input" type="number" placeholder="e.g. 20"/>
       </div>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
-      <button type="submit" class="btn-main">
-        Add Product
-      </button>
-      <button type="button" class="btn-outline" id="product-clear-btn">
-        Clear
-      </button>
+      <button type="submit" class="btn-main">Add Product</button>
+      <button type="button" class="btn-outline" id="product-clear-btn">Clear</button>
     </div>
 
     <p id="products-message" style="margin-top:6px;font-size:.85rem;"></p>
   </form>
 
-  <!-- TABLE PRODUCTS -->
   <div class="table-card" style="margin-top:20px;">
     <div style="padding:10px 14px 0;">
       <p class="table-title">Daftar Products</p>
       <p class="table-subtitle">Overview semua produk di katalog.</p>
     </div>
+
     <table class="data-table" id="products-table">
       <thead>
         <tr>
@@ -86,9 +59,7 @@
           <th class="col-actions">Actions</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- akan diisi via JS -->
-      </tbody>
+      <tbody></tbody>
     </table>
   </div>
 </div>

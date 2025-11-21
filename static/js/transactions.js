@@ -25,7 +25,7 @@ async function loadCustomers() {
     }
 
     select.innerHTML = `<option value="">Pilih Customer</option>`;
-    data.forEach((c) => {
+    data.forEach(c => {
       const opt = document.createElement("option");
       opt.value = c.CustomerID;
       opt.textContent = `#${c.CustomerID} — ${c.Gender || "Unknown"} (${c.Age})`;
@@ -48,7 +48,7 @@ async function loadProducts() {
 
     PRODUCTS = data;
     PRODUCTS_BY_ID = {};
-    data.forEach((p) => {
+    data.forEach(p => {
       PRODUCTS_BY_ID[p.ProductID] = p;
     });
 
@@ -71,7 +71,7 @@ function createProductSelect() {
   placeholder.textContent = "Pilih Product";
   select.appendChild(placeholder);
 
-  PRODUCTS.forEach((p) => {
+  PRODUCTS.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.ProductID;
     opt.textContent = `${p.Name} (#${p.ProductID})`;
@@ -83,7 +83,7 @@ function createProductSelect() {
 
 function refreshAllProductSelects() {
   const selects = document.querySelectorAll(".tx-item-product");
-  selects.forEach((oldSel) => {
+  selects.forEach(oldSel => {
     const currentValue = oldSel.value;
     const newSel = createProductSelect();
     newSel.value = currentValue;
@@ -139,7 +139,6 @@ function addItemRow() {
   row.appendChild(removeBtn);
 
   container.appendChild(row);
-
   updateSummary();
 }
 
@@ -170,7 +169,6 @@ function updateRowSubtotal(row) {
   const subtotal = qty * price;
 
   subtotalInput.value = subtotal.toFixed(2);
-
   updateSummary();
 }
 
@@ -179,7 +177,7 @@ function updateSummary() {
   let totalItems = 0;
   let totalAmount = 0;
 
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const qty = Number(row.querySelector(".tx-item-qty").value) || 0;
     const subtotal = Number(row.querySelector(".tx-item-subtotal").value) || 0;
     totalItems += qty;
@@ -214,7 +212,7 @@ async function handleTransactionSubmit(e) {
   }
 
   const items = [];
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const productId = row.querySelector(".tx-item-product").value;
     const qty = Number(row.querySelector(".tx-item-qty").value) || 0;
     const unitPrice = Number(row.querySelector(".tx-item-price").value) || 0;
@@ -256,8 +254,10 @@ async function handleTransactionSubmit(e) {
 
     alert("Transaksi berhasil dibuat.");
     document.getElementById("transaction-form").reset();
+
     const container = document.getElementById("items-container");
     if (container) container.innerHTML = "";
+
     addItemRow();
     updateSummary();
     loadTransactions();
@@ -301,7 +301,7 @@ async function loadTransactions() {
     let totalSales = 0;
     let totalItemsAll = 0;
 
-    data.forEach((tx) => {
+    data.forEach(tx => {
       const tr = document.createElement("tr");
 
       const amount = Number(tx.TotalAmount) || 0;
@@ -369,7 +369,7 @@ function openItemsModal(txId) {
   overlay.classList.remove("hidden");
 
   fetch(`/api/transactions/${txId}`)
-    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
     .then(({ ok, data }) => {
       if (!body) return;
       if (!ok) {
@@ -389,7 +389,7 @@ function openItemsModal(txId) {
       }
 
       body.innerHTML = "";
-      items.forEach((it) => {
+      items.forEach(it => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${it.Name || `#${it.ProductID}`}</td>
@@ -400,7 +400,7 @@ function openItemsModal(txId) {
         body.appendChild(tr);
       });
     })
-    .catch((err) => {
+    .catch(err => {
       console.error("Error loading transaction detail", err);
       if (body) {
         body.innerHTML = `
@@ -436,7 +436,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const txTable = document.getElementById("transactions-table");
   if (txTable) {
-    txTable.addEventListener("click", (e) => {
+    txTable.addEventListener("click", e => {
       const btn = e.target.closest(".tx-view-items");
       if (!btn) return;
       const txId = btn.getAttribute("data-id");
@@ -449,9 +449,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (closeBtn) {
     closeBtn.addEventListener("click", closeItemsModal);
   }
+
   const overlay = document.getElementById("items-modal");
   if (overlay) {
-    overlay.addEventListener("click", (e) => {
+    overlay.addEventListener("click", e => {
       if (e.target === overlay) {
         closeItemsModal();
       }

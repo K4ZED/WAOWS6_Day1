@@ -15,9 +15,6 @@ function resetUserForm() {
   }
 }
 
-/* =========================
-   LOAD USERS
-   ========================= */
 async function loadUsers() {
   const tbody = document.querySelector("#users-tbody");
   const msg = document.querySelector("#users-message");
@@ -47,7 +44,6 @@ async function loadUsers() {
     tbody.innerHTML = "";
     data.forEach(user => {
       const tr = document.createElement("tr");
-
       const statusLabel = user.IsActive ? "Active" : "Inactive";
       const statusClass = user.IsActive ? "badge-success" : "badge-muted";
 
@@ -61,10 +57,8 @@ async function loadUsers() {
           <button class="btn-danger btn-xs" data-action="delete" data-id="${user.UserId}">Delete</button>
         </td>
       `;
-
       tbody.appendChild(tr);
     });
-
   } catch (err) {
     console.error(err);
     tbody.innerHTML = `<tr><td colspan="5">Error saat memuat users.</td></tr>`;
@@ -75,9 +69,6 @@ async function loadUsers() {
   }
 }
 
-/* =========================
-   CREATE / UPDATE USER
-   ========================= */
 async function handleUserFormSubmit(e) {
   e.preventDefault();
 
@@ -96,7 +87,6 @@ async function handleUserFormSubmit(e) {
 
   const payload = { Email: email, Role: role, IsActive: isActive };
 
-  // password hanya dikirim kalau diisi
   if (password) {
     payload.Password = password;
   } else if (!id) {
@@ -132,7 +122,6 @@ async function handleUserFormSubmit(e) {
 
     await loadUsers();
     resetUserForm();
-
   } catch (err) {
     console.error(err);
     msg.textContent = "Terjadi kesalahan jaringan.";
@@ -140,9 +129,6 @@ async function handleUserFormSubmit(e) {
   }
 }
 
-/* =========================
-   EDIT USER
-   ========================= */
 async function startEditUser(id) {
   const msg = document.querySelector("#user-form-message");
 
@@ -165,7 +151,6 @@ async function startEditUser(id) {
     document.querySelector("#user-submit-btn").textContent = "Update User";
     msg.textContent = "";
     msg.style.color = "";
-
   } catch (err) {
     console.error(err);
     msg.textContent = "Terjadi kesalahan jaringan saat mengambil data user.";
@@ -173,9 +158,6 @@ async function startEditUser(id) {
   }
 }
 
-/* =========================
-   DELETE USER
-   ========================= */
 async function deleteUser(id) {
   const msg = document.querySelector("#users-message");
   if (!confirm("Yakin ingin menghapus / menonaktifkan user ini?")) return;
@@ -196,7 +178,6 @@ async function deleteUser(id) {
     msg.textContent = "User deleted / deactivated.";
     msg.style.color = "#16a34a";
     await loadUsers();
-
   } catch (err) {
     console.error(err);
     msg.textContent = "Terjadi kesalahan jaringan saat menghapus user.";
@@ -204,12 +185,9 @@ async function deleteUser(id) {
   }
 }
 
-/* =========================
-   INIT
-   ========================= */
 document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#users-tbody");
-  if (!tbody) return; // bukan di halaman /user
+  if (!tbody) return;
 
   loadUsers();
   resetUserForm();
@@ -226,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  tbody.addEventListener("click", (e) => {
+  tbody.addEventListener("click", e => {
     const btn = e.target.closest("button");
     if (!btn) return;
 

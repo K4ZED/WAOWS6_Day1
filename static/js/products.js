@@ -41,7 +41,7 @@ async function loadProducts() {
     }
 
     productTableBody.innerHTML = "";
-    data.forEach((p) => {
+    data.forEach(p => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${p.ProductID}</td>
@@ -66,7 +66,6 @@ async function loadProducts() {
   }
 }
 
-/* CREATE / UPDATE */
 async function handleProductFormSubmit(e) {
   e.preventDefault();
 
@@ -125,7 +124,6 @@ async function handleProductFormSubmit(e) {
   }
 }
 
-/* EDIT (klik tombol Edit di tabel) */
 function startEditProduct(btn) {
   const tr = btn.closest("tr");
   if (!tr) return;
@@ -145,7 +143,6 @@ function startEditProduct(btn) {
   }
 }
 
-/* DELETE */
 async function deleteProduct(id) {
   if (!confirm("Yakin ingin menghapus product ini?")) return;
   if (!productMessage) return;
@@ -173,7 +170,6 @@ async function deleteProduct(id) {
   }
 }
 
-/* INIT */
 document.addEventListener("DOMContentLoaded", () => {
   if (!productForm || !productTableBody) return;
 
@@ -184,13 +180,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const clearBtn = document.querySelector("#product-clear-btn");
   if (clearBtn) {
-    clearBtn.addEventListener("click", (e) => {
+    clearBtn.addEventListener("click", e => {
       e.preventDefault();
       resetProductForm();
     });
   }
 
-  productTableBody.addEventListener("click", (e) => {
+  productTableBody.addEventListener("click", e => {
     const btn = e.target.closest("button");
     if (!btn) return;
 

@@ -1,102 +1,96 @@
-# Flask Dashboard - Customer & Product Management System
+# Flask Dashboard - Sistem Manajemen Pelanggan & Produk
 
-A web-based dashboard application built with Flask and MySQL for managing customers, products, users, and transactions.
+Aplikasi dashboard berbasis web yang dibangun dengan Flask dan MySQL untuk mengelola pelanggan, produk, pengguna, dan transaksi.
 
-## Features
+## Fitur
 
-- **Customer Management**: Complete CRUD operations for customer data
-- **Product Management**: Add, view, update, and delete product information
-- **User Management**: Manage system users with full CRUD functionality
-- **Transaction System**: Process and record customer transactions
-- **Dashboard Interface**: Clean and intuitive web interface for data management
+- **Manajemen Pelanggan**: Operasi CRUD lengkap untuk data pelanggan
+- **Manajemen Produk**: Menambah, melihat, memperbarui, dan menghapus informasi produk
+- **Manajemen Pengguna**: Mengelola pengguna sistem dengan fungsionalitas CRUD lengkap
+- **Sistem Transaksi**: Memproses dan mencatat transaksi pelanggan
+- **interface Dashboard**: interface web yang bersih dan intuitif untuk manajemen data
 
-## Tech Stack
+## Stack Teknologi
 
 - **Backend**: Python Flask
 - **Database**: MySQL
 - **Frontend**: HTML, CSS, JavaScript (Vanilla)
 
-## Prerequisites
+## Prasyarat
 
-Before running this application, make sure you have the following installed:
+Sebelum menjalankan Web ini, pastikan Anda telah menginstal:
 
-- Python 3.7 or higher
+- Python 3.8 atau lebih
 - MySQL Server
-- pip (Python package manager)
+- pip (pengelola paket Python)
 
-## Installation
+## Instalasi
 
-1. **Clone the repository**
+1. **Clone repositori**
    ```bash
-   git clone <repository-url>
-   cd <project-folder>
+   git clone https://github.com/K4ZED/WAOWS6_Ken_Day1.git
+   cd WAOWS6_Ken_Day1
    ```
 
-2. **Create virtual environment**
+2. **Buat virtual environment**
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source venv/bin/activate  # Di Windows: venv\Scripts\activate
    ```
 
-3. **Install dependencies**
+3. **Install dependensi**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configure database**
+4. **Konfigurasi database**
    
-   Create a `.env` file in the root directory and add your database configuration:
+   Buat file `.env` di direktori root dan tambahkan konfigurasi database Anda:
    ```env
    MYSQL_HOST=localhost
-   MYSQL_USER=your_username
-   MYSQL_PASSWORD=your_password
-   MYSQL_DB=your_database_name
-   SECRET_KEY=your_secret_key
+   MYSQL_USER=username_anda
+   MYSQL_PASSWORD=password_anda
+   MYSQL_DB=nama_database_anda
+   SECRET_KEY=kunci_rahasia_anda
    ```
 
-5. **Initialize database tables**
+5. **Inisialisasi tabel database**
    ```bash
-   python init_db.py  # Or run your database migration script
+   python init_db.py  # Atau jalankan skrip migrasi database Anda
    ```
 
-## Running the Application
+## Menjalankan Web
 
-1. **Start the Flask development server**
+1. **Jalankan server development Flask**
    ```bash
    python app.py
-   # or
+   # atau
    flask run
    ```
 
-2. **Access the application**
+2. **Akses Web**
    
-   Open your browser and navigate to:
+   Buka browser Anda dan navigasi ke:
    ```
    http://localhost:5000
    ```
 
-## Project Structure
+## Struktur Proyek
 
 ```
 project-root/
 │
-├── __pycache__/          # Python cache files
+├── __pycache__/          # File cache Python
 ├── venv/                 # Virtual environment
 │
-├── config/              # Configuration files
-│   ├── __pycache__/
+├── config/              # File konfigurasi
 │   ├── __init__.py
-│   └── db.py            # Database configuration
+│   └── db.py            # Konfigurasi database
 │
-├── routes/              # Route handlers (Blueprints)
-│   ├── customers.py     # Customer CRUD routes
-│   ├── products.py      # Product CRUD routes
-│   └── transactions.py  # Transaction routes
-│
-├── static/              # Static files
+├── static/              # File statis
 │   ├── css/
-│   │   └── style.css    # Main stylesheet
-│   └── js/              # JavaScript files
+│   │   └── style.css    # Stylesheet utama
+│   └── js/              # File JavaScript
 │       ├── auth.js
 │       ├── customers.js
 │       ├── home.js
@@ -104,35 +98,35 @@ project-root/
 │       ├── transactions.js
 │       └── users.js
 │
-├── templates/           # HTML templates
+├── templates/           # Template HTML
 │   ├── admin_login.html
-│   ├── base.html        # Base template
+│   ├── base.html        # Template dasar
 │   ├── customers.html
-│   ├── index.html       # Home/Dashboard
+│   ├── index.html       # Beranda/Dashboard
 │   ├── login.html
 │   ├── products.html
 │   ├── register.html
 │   ├── transactions.html
 │   └── users.html
 │
-├── .env                 # Environment variables
-├── .gitignore          # Git ignore file
-├── app.py              # Main application file
-├── README.md           # This file
-└── requirements.txt    # Python dependencies
+├── .env                # Variabel environment
+├── .gitignore          # File Git ignore
+├── app.py              # File Web utama
+├── README.md           # File ini
+└── requirements.txt    # Dependensi Python
 ```
 
-## Database Schema
+## Skema Database
 
-### Users Table
+### Tabel Users
 - `UserId` (Primary Key, INT)
 - `Email` (VARCHAR(255), NN)
-- `Password` (VARCHAR(255), NN - hashed)
-- `Roles` (VARCHAR - for role management: admin/user)
+- `Password` (VARCHAR(255), NN - ter-hash)
+- `Roles` (VARCHAR - untuk manajemen role: admin/user)
 - `IsActive` (BOOLEAN, NN)
 - `created_at` (DATETIME)
 
-### mall_customer Table
+### Tabel mall_customer
 - `CustomerID` (Primary Key, INT)
 - `UserId` (Foreign Key → users.UserId, INT)
 - `Gender` (VARCHAR(10), NN)
@@ -141,7 +135,7 @@ project-root/
 - `Spending_Score` (INT, NN)
 - `created_at` (DATETIME)
 
-### products Table
+### Tabel products
 - `ProductID` (Primary Key, INT)
 - `CategoryID` (Foreign Key → product_categories.CategoryID, INT, NN)
 - `Name` (VARCHAR(100), NN)
@@ -149,19 +143,19 @@ project-root/
 - `Stock` (INT, NN)
 - `created_at` (DATETIME)
 
-### product_categories Table
+### Tabel product_categories
 - `CategoryID` (Primary Key, INT)
 - `Name` (VARCHAR(100), NN)
 - `Description` (TEXT)
 
-### transactions Table
+### Tabel transactions
 - `TransactionID` (Primary Key, INT)
 - `CustomerID` (Foreign Key → mall_customer.CustomerID, INT, NN)
 - `TransactionDate` (DATETIME)
 - `TotalAmount` (DECIMAL(12,2), NN)
 - `PaymentMethod` (VARCHAR(50))
 
-### transaction_details Table
+### Tabel transaction_details
 - `DetailID` (Primary Key, INT)
 - `TransactionID` (Foreign Key → transactions.TransactionID, INT, NN)
 - `ProductID` (Foreign Key → products.ProductID, INT, NN)
@@ -169,68 +163,85 @@ project-root/
 - `UnitPrice` (DECIMAL(10,2), NN)
 - `Subtotal` (DECIMAL(12,2), NN)
 
-## Entity Relationships
+## Relasi Entitas
 
-- One **User** can have one **Customer** profile (1:1)
-- One **Customer** can have many **Transactions** (1:N)
-- One **Transaction** can have many **Transaction Details** (1:N)
-- One **Product** can appear in many **Transaction Details** (1:N)
-- One **Category** can have many **Products** (1:N)
+- Satu **User** dapat memiliki satu profil **Customer** (1:1)
+- Satu **Customer** dapat memiliki banyak **Transactions** (1:N)
+- Satu **Transaction** dapat memiliki banyak **Transaction Details** (1:N)
+- Satu **Product** dapat muncul di banyak **Transaction Details** (1:N)
+- Satu **Category** dapat memiliki banyak **Products** (1:N)
 
 ## API Endpoints
 
-### Customers
-- `GET /customers` - Get all customers
-- `GET /customers/<id>` - Get specific customer
-- `POST /customers` - Create new customer
-- `PUT /customers/<id>` - Update customer
-- `DELETE /customers/<id>` - Delete customer
+### Autentikasi
+- `GET /` - Halaman beranda/dashboard
+- `GET /login` - Halaman login
+- `POST /login` - Proses login
+- `GET /register` - Halaman registrasi
+- `POST /register` - Proses registrasi
+- `GET /admin_login` - Halaman login admin
+- `GET /logout` - Logout
 
-### Products
-- `GET /products` - Get all products
-- `GET /products/<id>` - Get specific product
-- `POST /products` - Create new product
-- `PUT /products/<id>` - Update product
-- `DELETE /products/<id>` - Delete product
+### Pelanggan
+- `GET /customers` - Lihat semua pelanggan
+- `POST /customers` - Buat pelanggan baru
+- `PUT /customers/<id>` - Perbarui pelanggan
+- `DELETE /customers/<id>` - Hapus pelanggan
 
-### Users
-- `GET /users` - Get all users
-- `GET /users/<id>` - Get specific user
-- `POST /users` - Create new user
-- `PUT /users/<id>` - Update user
-- `DELETE /users/<id>` - Delete user
+### Produk
+- `GET /products` - Lihat semua produk
+- `POST /products` - Buat produk baru
+- `PUT /products/<id>` - Perbarui produk
+- `DELETE /products/<id>` - Hapus produk
 
-### Transactions
-- `GET /transactions` - Get all transactions
-- `GET /transactions/<id>` - Get specific transaction
-- `POST /transactions` - Create new transaction
+### Transaksi
+- `GET /transactions` - Lihat semua transaksi
+- `POST /transactions` - Buat transaksi baru
+- `GET /transactions/<id>` - Dapatkan detail transaksi
 
-## Usage
+### Pengguna (Tersembunyi - Akses URL Langsung)
+- `GET /user` - Lihat semua pengguna (interface CRUD)
+- `POST /user` - Buat pengguna baru
+- `PUT /user/<id>` - Perbarui pengguna
+- `DELETE /user/<id>` - Hapus pengguna
 
-1. **Login** to the dashboard with your user credentials
-2. **Navigate** through the sidebar menu to access different sections
-3. **Manage Data** using the CRUD operations available in each section
-4. **Create Transactions** by selecting a customer and product, then entering quantity
+## Penggunaan
 
-## Contributing
+1. **Login** ke dashboard dengan kredensial pengguna Anda
+2. **Navigasi** melalui menu navbar untuk mengakses berbagai bagian:
+   - **Home** - Ikhtisar dashboard
+   - **Customers** - Kelola data pelanggan
+   - **Products** - Kelola katalog produk
+   - **Transactions** - Proses dan lihat transaksi
+   - **{user_mail}** - Menampilkan pengguna yang sedang login
+   - **Logout** - Keluar dari sistem
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+### Mengakses Manajemen Pengguna (Khusus Admin)
 
-## License
+Manajemen Pengguna tidak terlihat di navbar karena alasan keamanan. Untuk mengakses interface CRUD Pengguna:
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- **URL**: `http://127.0.0.1:5000/user`
+- Halaman ini memungkinkan pengguna admin untuk mengelola pengguna sistem (Create, Read, Update, Delete)
+- Diperlukan akses URL langsung - tidak ditautkan di navigasi utama
 
-## Contact
+3. **Kelola Data** menggunakan operasi CRUD yang tersedia di setiap bagian
+4. **Buat Transaksi** dengan memilih pelanggan dan produk, lalu memasukkan kuantitas dan detail pembayaran
 
-Your Name - your.email@example.com
+## Kontribusi
 
-Project Link: [https://github.com/yourusername/project-name](https://github.com/yourusername/project-name)
+1. Fork repositori
+2. Buat branch fitur Anda (`git checkout -b feature`)
+3. Commit perubahan Anda (`git commit -m 'feature'`)
+4. Push ke branch (`git push origin feature`)
+5. Buat Pull Request
 
-## Acknowledgments
+## Kontak
 
-- Flask Documentation
-- MySQL Documentation
+Kenza Athallah Nandana Wijaya - kenzaathallah.wijaya@gmail.com
+
+Link Proyek: [https://github.com/K4ZED/WAOWS6_Ken_Day1.git](https://github.com/K4ZED/WAOWS6_Ken_Day1.git)
+
+## Ucapan Terima Kasih
+
+- Dokumentasi Flask
+- Dokumentasi MySQL

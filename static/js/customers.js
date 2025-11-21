@@ -37,7 +37,7 @@ async function loadCustomers() {
       return;
     }
 
-    data.forEach((c) => {
+    data.forEach(c => {
       const tr = document.createElement("tr");
       tr.classList.add("fade-row");
       tr.innerHTML = `
@@ -60,14 +60,14 @@ async function loadCustomers() {
   }
 }
 
-form.addEventListener("submit", async (e) => {
+form.addEventListener("submit", async e => {
   e.preventDefault();
 
   const payload = {
     Gender: genderInput.value.trim(),
     Age: Number(ageInput.value),
     Annual_Income: Number(incomeInput.value),
-    Spending_Score: Number(scoreInput.value),
+    Spending_Score: Number(scoreInput.value)
   };
 
   if (!payload.Gender || !payload.Age || !payload.Annual_Income || !payload.Spending_Score) {
@@ -83,7 +83,7 @@ form.addEventListener("submit", async (e) => {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
@@ -100,46 +100,42 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-resetBtn.addEventListener("click", (e) => {
+resetBtn.addEventListener("click", e => {
   e.preventDefault();
   clearForm();
 });
 
-// Edit / Delete via event delegation
-document
-  .querySelector("#customers-table")
-  .addEventListener("click", async (e) => {
-    const editId = e.target.dataset.edit;
-    const deleteId = e.target.dataset.delete;
+document.querySelector("#customers-table").addEventListener("click", async e => {
+  const editId = e.target.dataset.edit;
+  const deleteId = e.target.dataset.delete;
 
-    if (editId) {
-      const row = e.target.closest("tr").children;
-      idInput.value = editId;
-      genderInput.value = row[1].textContent;
-      ageInput.value = row[2].textContent;
-      incomeInput.value = row[3].textContent;
-      scoreInput.value = row[4].textContent;
-      saveBtn.textContent = "Update Customer";
+  if (editId) {
+    const row = e.target.closest("tr").children;
+    idInput.value = editId;
+    genderInput.value = row[1].textContent;
+    ageInput.value = row[2].textContent;
+    incomeInput.value = row[3].textContent;
+    scoreInput.value = row[4].textContent;
+    saveBtn.textContent = "Update Customer";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+  if (deleteId) {
+    const ok = confirm("Delete this customer?");
+    if (!ok) return;
 
-    if (deleteId) {
-      const ok = confirm("Delete this customer?");
-      if (!ok) return;
-
-      try {
-        const res = await fetch(`${CUSTOMER_API}/${deleteId}`, { method: "DELETE" });
-        if (!res.ok) {
-          alert("Failed to delete customer.");
-          return;
-        }
-        await loadCustomers();
-      } catch (err) {
-        console.error(err);
-        alert("Network error while deleting.");
+    try {
+      const res = await fetch(`${CUSTOMER_API}/${deleteId}`, { method: "DELETE" });
+      if (!res.ok) {
+        alert("Failed to delete customer.");
+        return;
       }
+      await loadCustomers();
+    } catch (err) {
+      console.error(err);
+      alert("Network error while deleting.");
     }
-  });
+  }
+});
 
 document.addEventListener("DOMContentLoaded", loadCustomers);

@@ -1,12 +1,4 @@
-from flask import (
-    Flask,
-    jsonify,
-    request,
-    render_template,
-    session,
-    redirect,
-    url_for,
-)
+from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 from flask_cors import CORS
 from functools import wraps
 import bcrypt
@@ -16,28 +8,15 @@ from config.db import query_all, execute
 app = Flask(__name__)
 CORS(app)
 
-# ganti dengan string random yang panjang untuk production
-app.secret_key = "waow_workshop_secret_key"
-
-
-# =========================
-#  Helpers & Decorators
-# =========================
+app.secret_key = "rahasia-waow-2025"
 
 def hash_password(plain_password: str) -> str:
-    return bcrypt.hashpw(
-        plain_password.encode("utf-8"), bcrypt.gensalt()
-    ).decode("utf-8")
-
+    return bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 def check_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(
-        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
-    )
-
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 def login_required(f):
-    """Untuk halaman HTML biasa – redirect ke /login kalau belum login."""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "user_id" not in session:
@@ -45,9 +24,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-
 def api_login_required(f):
-    """Untuk API JSON – balikin 401 JSON kalau belum login."""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "user_id" not in session:
@@ -55,9 +32,7 @@ def api_login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-
 def admin_required(f):
-    """Halaman HTML khusus admin (cek role)."""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "user_id" not in session or session.get("role") != "admin":
@@ -65,9 +40,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-
 def admin_api_required(f):
-    """API JSON khusus admin."""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "user_id" not in session:
@@ -77,16 +50,10 @@ def admin_api_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-
-# =========================
-#  Pages (HTML)
-# =========================
-
 @app.route("/")
 @login_required
 def index():
     return render_template("index.html")
-
 
 @app.route("/login")
 def login_page():
@@ -94,47 +61,35 @@ def login_page():
         return redirect(url_for("index"))
     return render_template("login.html")
 
-
 @app.route("/register")
 def register_page():
     if "user_id" in session:
         return redirect(url_for("index"))
     return render_template("register.html")
 
-
 @app.route("/admin-login")
 def admin_login_page():
     return render_template("admin_login.html")
-
 
 @app.route("/customers")
 @login_required
 def customers_page():
     return render_template("customers.html")
 
-
 @app.route("/products")
 @login_required
 def products_page():
     return render_template("products.html")
-
 
 @app.route("/transactions")
 @login_required
 def transactions_page():
     return render_template("transactions.html")
 
-
-# page rahasia admin
 @app.route("/user")
 @admin_required
 def users_page():
     return render_template("users.html")
-
-
-# =========================
-#  Auth APIs
-# =========================
 
 @app.route("/api/register", methods=["POST"])
 def api_register():
@@ -147,11 +102,7 @@ def api_register():
 
     hashed = hash_password(password)
 
-    # default role 'user'
-    sql = """
-        INSERT INTO users (Email, Password, IsActive, Role)
-        VALUES (%s, %s, 1, 'user')
-    """
+    sql = "INSERT INTO users (Email, Password, IsActive, Role) VALUES (%s, %s, 1, 'user')"
     try:
         user_id = execute(sql, (email, hashed))
     except Exception:
@@ -161,10 +112,7 @@ def api_register():
     session["user_email"] = email
     session["role"] = "user"
 
-    return jsonify(
-        {"message": "registered", "UserId": user_id, "Email": email, "Role": "user"}
-    ), 201
-
+    return jsonify({"message": "registered", "UserId": user_id, "Email": email, "Role": "user"}), 201
 
 @app.route("/api/login", methods=["POST"])
 def api_login():
@@ -199,7 +147,6 @@ def api_login():
         }
     )
 
-
 @app.route("/api/admin-login", methods=["POST"])
 def api_admin_login():
     data = request.get_json() or {}
@@ -219,8 +166,7 @@ def api_admin_login():
 
     if not check_password(password, user["Password"]):
         return jsonify({"error": "Password salah."}), 401
-
-    # reset session lalu set sebagai admin
+    
     session.clear()
     session["user_id"] = user["UserId"]
     session["user_email"] = user["Email"]
@@ -235,22 +181,17 @@ def api_admin_login():
         }
     )
 
-
 @app.route("/api/logout", methods=["POST", "GET"])
 def api_logout():
     session.clear()
-    # kalau dipanggil dari link langsung, redirect ke login
     if request.method == "GET":
         return redirect(url_for("login_page"))
     return jsonify({"message": "logged_out"})
 
-
-# untuk link logout di navbar
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login_page"))
-
 
 @app.route("/api/me")
 def api_me():
@@ -265,36 +206,21 @@ def api_me():
         }
     )
 
-
-# =========================
-#  CRUD USERS (ADMIN ONLY)
-# =========================
-
 @app.route("/api/users", methods=["GET"])
 @admin_api_required
 def list_users():
-    sql = """
-        SELECT UserId, Email, IsActive, Role, created_at
-        FROM users
-        ORDER BY UserId
-    """
+    sql = "SELECT UserId, Email, IsActive, Role, created_at FROM users ORDER BY UserId"
     rows = query_all(sql)
     return jsonify(rows)
-
 
 @app.route("/api/users/<int:user_id>", methods=["GET"])
 @admin_api_required
 def get_user(user_id):
-    sql = """
-        SELECT UserId, Email, IsActive, Role, created_at
-        FROM users
-        WHERE UserId = %s
-    """
+    sql = "SELECT UserId, Email, IsActive, Role, created_at FROM users WHERE UserId = %s"
     rows = query_all(sql, (user_id,))
     if not rows:
         return jsonify({"error": "User not found"}), 404
     return jsonify(rows[0])
-
 
 @app.route("/api/users", methods=["POST"])
 @admin_api_required
@@ -313,10 +239,7 @@ def create_user():
 
     hashed = hash_password(password)
 
-    sql = """
-        INSERT INTO users (Email, Password, IsActive, Role)
-        VALUES (%s, %s, %s, %s)
-    """
+    sql = "INSERT INTO users (Email, Password, IsActive, Role) VALUES (%s, %s, %s, %s)"
     try:
         user_id = execute(sql, (email, hashed, 1 if is_active else 0, role))
     except Exception:
@@ -331,7 +254,6 @@ def create_user():
             "Role": role,
         }
     ), 201
-
 
 @app.route("/api/users/<int:user_id>", methods=["PUT"])
 @admin_api_required
@@ -376,19 +298,12 @@ def update_user(user_id):
 
     return jsonify({"message": "updated"})
 
-
 @app.route("/api/users/<int:user_id>", methods=["DELETE"])
 @admin_api_required
 def delete_user(user_id):
-    # soft delete: set IsActive = 0
     sql = "UPDATE users SET IsActive = 0 WHERE UserId = %s"
     execute(sql, (user_id,))
     return jsonify({"message": "deactivated"})
-
-
-# =========================
-#  CUSTOMERS APIs
-# =========================
 
 @app.route("/api/customers", methods=["GET"])
 @api_login_required
@@ -396,15 +311,11 @@ def get_customers():
     rows = query_all("SELECT * FROM mall_customer ORDER BY CustomerID")
     return jsonify(rows)
 
-
 @app.route("/api/customers", methods=["POST"])
 @api_login_required
 def create_customer():
     data = request.get_json() or {}
-    sql = """
-        INSERT INTO mall_customer (Gender, Age, Annual_Income, Spending_Score)
-        VALUES (%s, %s, %s, %s)
-    """
+    sql = "INSERT INTO mall_customer (Gender, Age, Annual_Income, Spending_Score) VALUES (%s, %s, %s, %s)"
     params = (
         data.get("Gender"),
         data.get("Age"),
@@ -414,16 +325,11 @@ def create_customer():
     new_id = execute(sql, params)
     return jsonify({"CustomerID": new_id}), 201
 
-
 @app.route("/api/customers/<int:customer_id>", methods=["PUT"])
 @api_login_required
 def update_customer(customer_id):
     data = request.get_json() or {}
-    sql = """
-        UPDATE mall_customer
-        SET Gender=%s, Age=%s, Annual_Income=%s, Spending_Score=%s
-        WHERE CustomerID=%s
-    """
+    sql = "UPDATE mall_customer SET Gender=%s, Age=%s, Annual_Income=%s, Spending_Score=%s WHERE CustomerID=%s"
     params = (
         data.get("Gender"),
         data.get("Age"),
@@ -434,18 +340,12 @@ def update_customer(customer_id):
     execute(sql, params)
     return jsonify({"message": "updated"})
 
-
 @app.route("/api/customers/<int:customer_id>", methods=["DELETE"])
 @api_login_required
 def delete_customer(customer_id):
     sql = "DELETE FROM mall_customer WHERE CustomerID=%s"
     execute(sql, (customer_id,))
     return jsonify({"message": "deleted"})
-
-
-# =========================
-#  PRODUCTS APIs
-# =========================
 
 @app.route("/api/products", methods=["GET"])
 @api_login_required
@@ -457,6 +357,18 @@ def get_products():
     except Exception as e:
         return jsonify({"error": f"Database error: {e}"}), 500
 
+@app.route("/api/product_categories", methods=["GET"])
+@api_login_required
+def get_product_categories():
+    sql = """
+        SELECT c.CategoryID, c.Name, c.Description, COUNT(p.ProductID) AS ProductCount
+        FROM product_categories c
+        LEFT JOIN products p ON p.CategoryID = c.CategoryID
+        GROUP BY c.CategoryID, c.Name, c.Description
+        ORDER BY c.CategoryID
+    """
+    rows = query_all(sql)
+    return jsonify(rows)
 
 @app.route("/api/products", methods=["POST"])
 @api_login_required
@@ -474,20 +386,15 @@ def create_product():
     if not name:
         return jsonify({"error": "Name wajib diisi."}), 400
 
-    sql = """
-        INSERT INTO products (CategoryID, Name, Price, Stock)
-        VALUES (%s, %s, %s, %s)
-    """
+    sql = "INSERT INTO products (CategoryID, Name, Price, Stock) VALUES (%s, %s, %s, %s)"
     params = (category_id, name, price, stock)
 
     try:
         new_id = execute(sql, params)
     except Exception as e:
-        # di sini termasuk error foreign key, dll
         return jsonify({"error": f"Database error: {e}"}), 500
 
     return jsonify({"ProductID": new_id}), 201
-
 
 @app.route("/api/products/<int:product_id>", methods=["PUT"])
 @api_login_required
@@ -505,11 +412,7 @@ def update_product(product_id):
     if not name:
         return jsonify({"error": "Name wajib diisi."}), 400
 
-    sql = """
-        UPDATE products
-        SET CategoryID=%s, Name=%s, Price=%s, Stock=%s
-        WHERE ProductID=%s
-    """
+    sql = "UPDATE products SET CategoryID=%s, Name=%s, Price=%s, Stock=%s WHERE ProductID=%s"
     params = (category_id, name, price, stock, product_id)
 
     try:
@@ -518,7 +421,6 @@ def update_product(product_id):
         return jsonify({"error": f"Database error: {e}"}), 500
 
     return jsonify({"message": "updated"})
-
 
 @app.route("/api/products/<int:product_id>", methods=["DELETE"])
 @api_login_required
@@ -530,32 +432,18 @@ def delete_product(product_id):
         return jsonify({"error": f"Database error: {e}"}), 500
     return jsonify({"message": "deleted"})
 
-
-# =========================
-#  TRANSACTIONS APIs
-# =========================
-
 @app.route("/api/transactions")
 @api_login_required
 def get_transactions():
     sql = """
         SELECT
-            t.TransactionID,
-            t.CustomerID,
-            t.TransactionDate,
-            t.PaymentMethod,
-            t.TotalAmount,
-            (
-                SELECT COALESCE(SUM(d.Quantity), 0)
-                FROM transaction_details d
-                WHERE d.TransactionID = t.TransactionID
-            ) AS TotalItems
+            t.TransactionID, t.CustomerID, t.TransactionDate, t.PaymentMethod, t.TotalAmount,
+            (SELECT COALESCE(SUM(d.Quantity), 0) FROM transaction_details d WHERE d.TransactionID = t.TransactionID) AS TotalItems
         FROM transactions t
         ORDER BY t.TransactionDate DESC
     """
     rows = query_all(sql)
     return jsonify(rows)
-
 
 @app.route("/api/transactions", methods=["POST"])
 @api_login_required
@@ -568,25 +456,16 @@ def create_transaction():
     if not items:
         return jsonify({"error": "No items"}), 400
 
-    total_items = 0
     total_amount = 0.0
-
     for item in items:
         qty = int(item.get("Quantity", 0))
         price = float(item.get("UnitPrice", 0))
-        total_items += qty
         total_amount += qty * price
 
-    tx_sql = """
-        INSERT INTO transactions (CustomerID, TransactionDate, TotalAmount, PaymentMethod)
-        VALUES (%s, NOW(), %s, %s)
-    """
+    tx_sql = "INSERT INTO transactions (CustomerID, TransactionDate, TotalAmount, PaymentMethod) VALUES (%s, NOW(), %s, %s)"
     tx_id = execute(tx_sql, (customer_id, total_amount, payment_method))
 
-    detail_sql = """
-        INSERT INTO transaction_details (TransactionID, ProductID, Quantity, UnitPrice, Subtotal)
-        VALUES (%s, %s, %s, %s, %s)
-    """
+    detail_sql = "INSERT INTO transaction_details (TransactionID, ProductID, Quantity, UnitPrice, Subtotal) VALUES (%s, %s, %s, %s, %s)"
 
     for item in items:
         qty = int(item.get("Quantity", 0))
@@ -595,13 +474,7 @@ def create_transaction():
 
         execute(
             detail_sql,
-            (
-                tx_id,
-                item.get("ProductID"),
-                qty,
-                price,
-                subtotal,
-            ),
+            (tx_id, item.get("ProductID"), qty, price, subtotal),
         )
 
         execute(
@@ -611,32 +484,11 @@ def create_transaction():
 
     return jsonify({"message": "created", "TransactionID": tx_id}), 201
 
-
 @app.route("/api/transactions/<int:transaction_id>")
 @api_login_required
 def get_transaction_detail(transaction_id):
-    header_sql = """
-        SELECT
-            t.TransactionID,
-            t.CustomerID,
-            t.TransactionDate,
-            t.TotalAmount,
-            t.PaymentMethod
-        FROM transactions t
-        WHERE t.TransactionID = %s
-    """
-    items_sql = """
-        SELECT
-            d.DetailID,
-            d.ProductID,
-            p.Name,
-            d.Quantity,
-            d.UnitPrice,
-            d.Subtotal
-        FROM transaction_details d
-        JOIN products p ON d.ProductID = p.ProductID
-        WHERE d.TransactionID = %s
-    """
+    header_sql = "SELECT t.TransactionID, t.CustomerID, t.TransactionDate, t.TotalAmount, t.PaymentMethod FROM transactions t WHERE t.TransactionID = %s"
+    items_sql = "SELECT d.DetailID, d.ProductID, p.Name, d.Quantity, d.UnitPrice, d.Subtotal FROM transaction_details d JOIN products p ON d.ProductID = p.ProductID WHERE d.TransactionID = %s"
 
     header = query_all(header_sql, (transaction_id,))
     if not header:
@@ -646,7 +498,6 @@ def get_transaction_detail(transaction_id):
     tx = header[0]
     tx["Items"] = items
     return jsonify(tx)
-
 
 if __name__ == "__main__":
     app.run(debug=True)

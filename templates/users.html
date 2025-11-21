@@ -8,30 +8,18 @@
     Kelola akun pengguna aplikasi: buat user baru, ubah role, dan aktif/nonaktifkan akun.
   </p>
 
-  <!-- FORM -->
   <form id="user-form">
-    <input type="hidden" id="user-id" />
+    <input type="hidden" id="user-id"/>
 
     <div class="form-grid">
       <div class="field">
         <label for="user-email">Email</label>
-        <input
-          id="user-email"
-          type="email"
-          class="input"
-          placeholder="you@example.com"
-          required
-        />
+        <input id="user-email" type="email" class="input" placeholder="you@example.com" required/>
       </div>
 
       <div class="field">
         <label for="user-password">Password</label>
-        <input
-          id="user-password"
-          type="password"
-          class="input"
-          placeholder="Isi untuk user baru / ubah password"
-        />
+        <input id="user-password" type="password" class="input" placeholder="Isi untuk user baru / ubah password"/>
         <span style="font-size:0.75rem;color:#9ca3af;margin-top:2px;">
           Kosongkan saat edit jika tidak ingin mengubah password.
         </span>
@@ -55,23 +43,19 @@
     </div>
 
     <div style="display:flex;gap:8px;margin-top:4px;">
-      <button type="submit" class="btn-main" id="user-submit-btn">
-        Save User
-      </button>
-      <button type="button" class="btn-outline" id="user-reset-btn">
-        Cancel
-      </button>
+      <button type="submit" class="btn-main" id="user-submit-btn">Save User</button>
+      <button type="button" class="btn-outline" id="user-reset-btn">Cancel</button>
     </div>
 
     <p id="user-form-message" style="margin-top:6px;font-size:.85rem;"></p>
   </form>
 
-  <!-- TABLE -->
   <div class="table-card" style="margin-top:20px;">
     <div style="padding:10px 14px 0;">
       <p class="table-title">Daftar Users</p>
       <p class="table-subtitle">Overview semua akun terdaftar.</p>
     </div>
+
     <table class="data-table" id="users-table">
       <thead>
         <tr>
@@ -82,9 +66,7 @@
           <th class="col-actions">Actions</th>
         </tr>
       </thead>
-      <tbody id="users-tbody">
-        <!-- akan diisi via JS -->
-      </tbody>
+      <tbody id="users-tbody"></tbody>
     </table>
   </div>
 
