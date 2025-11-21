@@ -5,8 +5,7 @@
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   min-height: 100vh;
   background: radial-gradient(circle at top, #e0f2fe 0, #f4f4ff 35%, #f8fafc 100%);
   color: #0f172a;
@@ -170,6 +169,7 @@ body {
   font-weight: 600;
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
 }
+
 .btn-main:hover,
 .btn-main:active {
   transform: translateY(-2px);
@@ -181,6 +181,7 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.9);
   color: #1f2937;
 }
+
 .btn-outline:hover {
   background: #eff6ff;
 }
@@ -189,6 +190,7 @@ body {
   background: #ef4444;
   color: #fef2f2;
 }
+
 .btn-danger:hover {
   background: #dc2626;
 }
@@ -205,6 +207,8 @@ body {
   background: #ffffff;
 }
 
+/* table users & tables lain pakai data-table */
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -212,22 +216,24 @@ body {
 
 .data-table th,
 .data-table td {
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(226, 232, 240, 1);
+  padding: 12px 16px;
   font-size: 0.9rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 1);
+  text-align: left;
 }
 
 .data-table thead {
   background: #f1f5f9;
 }
 
-.data-table tbody tr:nth-child(even) {
-  background: #f8fafc;
+/* kolom actions saja yang rata kanan */
+.data-table th.col-actions,
+.data-table td.col-actions,
+.data-table th:last-child,
+.data-table td:last-child {
+  text-align: right;
 }
 
-.data-table tbody tr:hover {
-  background: #e0f2fe;
-}
 
 .col-actions,
 .data-table td:last-child {
@@ -244,8 +250,6 @@ body {
 .fade-row {
   animation: fadeInUp 0.35s ease;
 }
-
-/* HOME HERO */
 
 .home-hero {
   max-width: 880px;
@@ -340,8 +344,6 @@ body {
   color: #6b7280;
 }
 
-/* HOME METRICS */
-
 .home-metrics {
   margin: 20px auto 0;
   max-width: 1100px;
@@ -386,8 +388,6 @@ body {
   font-size: 1.6rem;
   font-weight: 700;
 }
-
-/* HOME PREVIEW */
 
 .home-preview {
   margin-top: 20px;
@@ -454,8 +454,6 @@ body {
   font-size: 0.85rem;
   color: #94a3b8;
 }
-
-/* ANALYTICS */
 
 .analytics-section {
   margin-top: 20px;
@@ -543,8 +541,6 @@ body {
   background: linear-gradient(90deg, #6366f1, #f97316);
 }
 
-/* TRANSACTIONS PAGE EXTRA */
-
 .transaction-metrics {
   margin-top: 12px;
 }
@@ -598,8 +594,6 @@ body {
   margin-top: 18px;
 }
 
-/* MODAL */
-
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -643,8 +637,6 @@ body {
   display: none;
 }
 
-/* TRANSACTIONS TABLE COLUMN BALANCE */
-
 #transactions-table {
   table-layout: fixed;
   width: 100%;
@@ -676,11 +668,6 @@ body {
   text-align: left;
 }
 
-/* ================ */
-/*  USER PAGE STYLES */
-/* ================ */
-
-/* Small buttons (Edit / Delete) */
 .btn-xs {
   font-size: 0.75rem;
   padding: 4px 10px;
@@ -691,14 +678,24 @@ body {
 }
 
 .btn-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
   background: #e5e7eb;
-  color: #111827;
+  color: #374151;
+  transition: 0.15s ease;
 }
 
 .btn-soft:hover {
-  opacity: 0.9;
-  transform: translateY(-0.5px);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  background: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
 }
 
 .btn-danger {
@@ -709,42 +706,38 @@ body {
 .btn-danger:hover {
   opacity: 0.95;
   transform: translateY(-0.5px);
-  box-shadow: 0 2px 8px rgba(239,68,68,0.45);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45);
 }
 
-/* Badges for Role / Status */
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 10px;
+  padding: 3px 14px;
   border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  border: 1px solid transparent;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
   white-space: nowrap;
+  color: #000 !important;
 }
 
 .badge-role {
-  background: rgba(59,130,246,0.1);
-  color: #1d4ed8;
-  border-color: rgba(59,130,246,0.4);
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
 }
 
 .badge-success {
-  background: rgba(16,185,129,0.12);
-  color: #047857;
-  border-color: rgba(16,185,129,0.45);
+  background: #bbf7d0;
+  border: 1px solid #4ade80;
 }
 
 .badge-muted {
-  background: rgba(148,163,184,0.15);
-  color: #475569;
-  border-color: rgba(148,163,184,0.5);
+  background: #e5e7eb;
+  border: 1px solid #cbd5e1;
 }
 
-/* Optional: table header/title tweaks (biar konsisten) */
+
 .table-title {
   font-size: 1rem;
   font-weight: 600;
@@ -754,4 +747,112 @@ body {
 .table-subtitle {
   font-size: 0.85rem;
   color: #6b7280;
+}
+
+.btn-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 999px;
+  border: none;
+  background: rgba(148, 163, 184, 0.2);
+  color: #e5e7eb;
+  transition: 0.15s ease;
+}
+
+.btn-soft:hover {
+  background: rgba(148, 163, 184, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-xs {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.badge-role {
+  background: rgba(59, 130, 246, 0.16);
+  color: #bfdbfe;
+  border-color: rgba(59, 130, 246, 0.7);
+}
+
+.badge-success {
+  background: rgba(22, 163, 74, 0.24);
+  color: #bbf7d0;
+  border-color: rgba(22, 163, 74, 0.7);
+}
+
+.badge-muted {
+  background: rgba(148, 163, 184, 0.2);
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.7);
+}
+
+.data-table th {
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.users-table .btn-edit,
+.data-table .btn-edit {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  border: 1px solid #d1d5db !important;
+  padding: 4px 12px !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  transition: 0.2s ease;
+}
+
+.users-table .btn-edit:hover,
+.data-table .btn-edit:hover {
+  background: #d1d5db !important;
+}
+
+/* ukuran tombol kecil */
+.btn-xs {
+  padding: 4px 12px;
+  font-size: 0.78rem;
+}
+
+/* tombol EDIT di tabel (abu, teks gelap, tidak nyatu) */
+.btn-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;      /* abu terang, beda dengan row */
+  color: #374151;           /* teks abu gelap, jelas */
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.btn-soft:hover {
+  background: #e5e7eb;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.15);
+  transform: translateY(-1px);
 }
