@@ -241,7 +241,7 @@ Kenza Athallah Nandana Wijaya - kenzaathallah.wijaya@gmail.com
 
 Link Proyek: [https://github.com/K4ZED/WAOWS6_Ken_Day1.git](https://github.com/K4ZED/WAOWS6_Ken_Day1.git)
 
-## Ucapan Terima Kasih
+## Terima Kasih
 
 - Dokumentasi Flask
 - Dokumentasi MySQL
