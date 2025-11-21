@@ -832,21 +832,19 @@ body {
   background: #d1d5db !important;
 }
 
-/* ukuran tombol kecil */
 .btn-xs {
   padding: 4px 12px;
   font-size: 0.78rem;
 }
 
-/* tombol EDIT di tabel (abu, teks gelap, tidak nyatu) */
 .btn-soft {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
   border: 1px solid #d1d5db;
-  background: #f3f4f6;      /* abu terang, beda dengan row */
-  color: #374151;           /* teks abu gelap, jelas */
+  background: #f3f4f6;
+  color: #374151;
   cursor: pointer;
   transition: 0.15s ease;
 }

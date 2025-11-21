@@ -1,147 +1,206 @@
 const PRODUCT_API = "/api/products";
 
-const productTableBody = document.querySelector("#products-table tbody");
 const productForm = document.querySelector("#product-form");
+const productTableBody = document.querySelector("#products-table tbody");
+const productMessage = document.querySelector("#products-message");
 
-const productIdInput = document.querySelector("#product-id");
-const categoryInput = document.querySelector("#category");
-const nameInput = document.querySelector("#name");
-const priceInput = document.querySelector("#price");
-const stockInput = document.querySelector("#stock");
-const saveProductBtn = document.querySelector("#save-product-btn");
-const resetProductBtn = document.querySelector("#reset-product-btn");
-
-function clearProductForm() {
-  productIdInput.value = "";
-  categoryInput.value = "";
-  nameInput.value = "";
-  priceInput.value = "";
-  stockInput.value = "";
-  saveProductBtn.textContent = "Add Product";
+function resetProductForm() {
+  document.querySelector("#product-id").value = "";
+  document.querySelector("#product-category").value = "";
+  document.querySelector("#product-name").value = "";
+  document.querySelector("#product-price").value = "";
+  document.querySelector("#product-stock").value = "";
+  if (productMessage) {
+    productMessage.textContent = "";
+    productMessage.style.color = "";
+  }
 }
 
 async function loadProducts() {
+  if (!productTableBody) return;
+
+  productTableBody.innerHTML = `<tr><td colspan="6">Loading products...</td></tr>`;
+  if (productMessage) productMessage.textContent = "";
+
   try {
-    productTableBody.innerHTML =
-      '<tr><td colspan="6" class="empty-row">Loading products...</td></tr>';
-
     const res = await fetch(PRODUCT_API);
-    if (!res.ok) throw new Error("Failed to fetch products");
-
     const data = await res.json();
-    productTableBody.innerHTML = "";
 
-    if (!data.length) {
-      productTableBody.innerHTML =
-        '<tr><td colspan="6" class="empty-row">No products yet. Add one above.</td></tr>';
+    if (!res.ok) {
+      productTableBody.innerHTML = `<tr><td colspan="6">Gagal memuat products.</td></tr>`;
+      if (productMessage) {
+        productMessage.textContent = data.error || "Gagal memuat data products.";
+        productMessage.style.color = "#dc2626";
+      }
       return;
     }
 
+    if (!Array.isArray(data) || data.length === 0) {
+      productTableBody.innerHTML = `<tr><td colspan="6">Belum ada product.</td></tr>`;
+      return;
+    }
+
+    productTableBody.innerHTML = "";
     data.forEach((p) => {
       const tr = document.createElement("tr");
-      tr.classList.add("fade-row");
       tr.innerHTML = `
         <td>${p.ProductID}</td>
         <td>${p.CategoryID}</td>
         <td>${p.Name}</td>
-        <td>${p.Price}</td>
+        <td>${Number(p.Price).toFixed(2)}</td>
         <td>${p.Stock}</td>
         <td class="col-actions">
-          <button class="btn-outline btn-small" data-edit="${p.ProductID}">Edit</button>
-          <button class="btn-danger btn-small" data-delete="${p.ProductID}">Delete</button>
+          <button class="btn-soft btn-xs" data-action="edit" data-id="${p.ProductID}">Edit</button>
+          <button class="btn-danger btn-xs" data-action="delete" data-id="${p.ProductID}">Delete</button>
         </td>
       `;
       productTableBody.appendChild(tr);
     });
   } catch (err) {
     console.error(err);
-    productTableBody.innerHTML =
-      '<tr><td colspan="6" class="error-row">Failed to load products.</td></tr>';
+    productTableBody.innerHTML = `<tr><td colspan="6">Error saat memuat products.</td></tr>`;
+    if (productMessage) {
+      productMessage.textContent = "Terjadi kesalahan jaringan.";
+      productMessage.style.color = "#dc2626";
+    }
   }
 }
 
-productForm.addEventListener("submit", async (e) => {
+/* CREATE / UPDATE */
+async function handleProductFormSubmit(e) {
   e.preventDefault();
 
-  const payload = {
-    CategoryID: Number(categoryInput.value),
-    Name: nameInput.value.trim(),
-    Price: Number(priceInput.value),
-    Stock: Number(stockInput.value),
-  };
+  const id = document.querySelector("#product-id").value;
+  const categoryId = document.querySelector("#product-category").value.trim();
+  const name = document.querySelector("#product-name").value.trim();
+  const price = document.querySelector("#product-price").value.trim();
+  const stock = document.querySelector("#product-stock").value.trim();
 
-  if (!payload.CategoryID || !payload.Name || isNaN(payload.Price) || isNaN(payload.Stock)) {
-    alert("Please fill in all product fields.");
+  if (!productMessage) return;
+
+  if (!categoryId || !name || !price || !stock) {
+    productMessage.textContent = "Semua field wajib diisi.";
+    productMessage.style.color = "#dc2626";
     return;
   }
 
-  const isUpdate = Boolean(productIdInput.value);
-  const url = isUpdate ? `${PRODUCT_API}/${productIdInput.value}` : PRODUCT_API;
-  const method = isUpdate ? "PUT" : "POST";
+  const payload = {
+    CategoryID: parseInt(categoryId, 10),
+    Name: name,
+    Price: parseFloat(price),
+    Stock: parseInt(stock, 10)
+  };
+
+  const isEdit = !!id;
+  const url = isEdit ? `${PRODUCT_API}/${id}` : PRODUCT_API;
+  const method = isEdit ? "PUT" : "POST";
+
+  productMessage.textContent = isEdit ? "Updating product..." : "Creating product...";
+  productMessage.style.color = "#64748b";
 
   try {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
+    const data = await res.json();
 
     if (!res.ok) {
-      console.error("Failed to save product", await res.text());
-      alert("Failed to save product.");
+      productMessage.textContent =
+        data.error || (isEdit ? "Gagal update product." : "Gagal membuat product.");
+      productMessage.style.color = "#dc2626";
       return;
     }
 
-    clearProductForm();
+    productMessage.textContent = isEdit ? "Product updated." : "Product created.";
+    productMessage.style.color = "#16a34a";
+
+    await loadProducts();
+    resetProductForm();
+  } catch (err) {
+    console.error(err);
+    productMessage.textContent = "Terjadi kesalahan jaringan.";
+    productMessage.style.color = "#dc2626";
+  }
+}
+
+/* EDIT (klik tombol Edit di tabel) */
+function startEditProduct(btn) {
+  const tr = btn.closest("tr");
+  if (!tr) return;
+
+  const cells = tr.querySelectorAll("td");
+  const id = btn.getAttribute("data-id");
+
+  document.querySelector("#product-id").value = id;
+  document.querySelector("#product-category").value = cells[1].textContent.trim();
+  document.querySelector("#product-name").value = cells[2].textContent.trim();
+  document.querySelector("#product-price").value = cells[3].textContent.trim();
+  document.querySelector("#product-stock").value = cells[4].textContent.trim();
+
+  if (productMessage) {
+    productMessage.textContent = "";
+    productMessage.style.color = "";
+  }
+}
+
+/* DELETE */
+async function deleteProduct(id) {
+  if (!confirm("Yakin ingin menghapus product ini?")) return;
+  if (!productMessage) return;
+
+  productMessage.textContent = "Deleting product...";
+  productMessage.style.color = "#64748b";
+
+  try {
+    const res = await fetch(`${PRODUCT_API}/${id}`, { method: "DELETE" });
+    const data = await res.json();
+
+    if (!res.ok) {
+      productMessage.textContent = data.error || "Gagal menghapus product.";
+      productMessage.style.color = "#dc2626";
+      return;
+    }
+
+    productMessage.textContent = "Product deleted.";
+    productMessage.style.color = "#16a34a";
     await loadProducts();
   } catch (err) {
     console.error(err);
-    alert("Network error while saving product.");
+    productMessage.textContent = "Terjadi kesalahan jaringan.";
+    productMessage.style.color = "#dc2626";
   }
-});
+}
 
-resetProductBtn.addEventListener("click", (e) => {
-  e.preventDefault();
-  clearProductForm();
-});
+/* INIT */
+document.addEventListener("DOMContentLoaded", () => {
+  if (!productForm || !productTableBody) return;
 
-// Edit / Delete lewat event delegation
-document
-  .querySelector("#products-table")
-  .addEventListener("click", async (e) => {
-    const editId = e.target.dataset.edit;
-    const deleteId = e.target.dataset.delete;
+  loadProducts();
+  resetProductForm();
 
-    if (editId) {
-      const row = e.target.closest("tr").children;
-      productIdInput.value = editId;
-      categoryInput.value = row[1].textContent;
-      nameInput.value = row[2].textContent;
-      priceInput.value = row[3].textContent;
-      stockInput.value = row[4].textContent;
-      saveProductBtn.textContent = "Update Product";
+  productForm.addEventListener("submit", handleProductFormSubmit);
 
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+  const clearBtn = document.querySelector("#product-clear-btn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      resetProductForm();
+    });
+  }
 
-    if (deleteId) {
-      const ok = confirm("Delete this product?");
-      if (!ok) return;
+  productTableBody.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
 
-      try {
-        const res = await fetch(`${PRODUCT_API}/${deleteId}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) {
-          alert("Failed to delete product.");
-          return;
-        }
-        await loadProducts();
-      } catch (err) {
-        console.error(err);
-        alert("Network error while deleting.");
-      }
+    const id = btn.getAttribute("data-id");
+    const action = btn.getAttribute("data-action");
+
+    if (action === "edit") {
+      startEditProduct(btn);
+    } else if (action === "delete") {
+      deleteProduct(id);
     }
   });
-
-document.addEventListener("DOMContentLoaded", loadProducts);
+});

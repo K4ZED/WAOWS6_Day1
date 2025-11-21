@@ -454,23 +454,36 @@ def get_products():
     return jsonify(rows)
 
 
+
 @app.route("/api/products", methods=["POST"])
 @api_login_required
 def create_product():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
+
+    try:
+        category_id = int(data.get("CategoryID", 0))
+        name = (data.get("Name") or "").strip()
+        price = float(data.get("Price", 0))
+        stock = int(data.get("Stock", 0))
+    except (TypeError, ValueError) as e:
+        return jsonify({"error": f"Invalid input: {e}"}), 400
+
+    if not name:
+        return jsonify({"error": "Name wajib diisi."}), 400
+
     sql = """
         INSERT INTO products (CategoryID, Name, Price, Stock)
         VALUES (%s, %s, %s, %s)
     """
-    params = (
-        data.get("CategoryID"),
-        data.get("Name"),
-        data.get("Price"),
-        data.get("Stock"),
-    )
-    new_id = execute(sql, params)
-    return jsonify({"ProductID": new_id}), 201
+    params = (category_id, name, price, stock)
 
+    try:
+        new_id = execute(sql, params)
+    except Exception as e:
+        # biar gak balas HTML error page
+        return jsonify({"error": f"Database error: {e}"}), 500
+
+    return jsonify({"ProductID": new_id}), 201
 
 @app.route("/api/products/<int:product_id>", methods=["PUT"])
 @api_login_required
@@ -490,7 +503,6 @@ def update_product(product_id):
     )
     execute(sql, params)
     return jsonify({"message": "updated"})
-
 
 @app.route("/api/products/<int:product_id>", methods=["DELETE"])
 @api_login_required
